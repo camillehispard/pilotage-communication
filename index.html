@@ -50,6 +50,27 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 13px;border-bottom:
 .owner-modal-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.owner-choice{border:1px solid #dfe6ef;border-radius:12px;padding:11px;background:#f8fafc}.owner-choice b{display:block;margin-bottom:7px}
 @media(max-width:700px){.owner-strip{grid-template-columns:42px 1fr}.owner-edit{grid-column:1/-1}.duty-panel{grid-template-columns:1fr}}
 </style>
+
+<style>
+/* V5 — visual polish */
+body{background:linear-gradient(180deg,#f5f8fc 0,#eef3f8 100%)}
+aside{background:linear-gradient(180deg,#0b1d33 0,#102b4b 100%);box-shadow:10px 0 35px #0b1d3312}
+.logo{font-size:21px;line-height:1.02;letter-spacing:-.04em}
+nav .group{margin-top:20px;color:#7f9ab8;font-size:10px;letter-spacing:.13em}
+nav button{transition:.15s ease;border:1px solid transparent}nav button:hover{transform:translateX(2px);background:#ffffff0d}nav button.active{box-shadow:0 7px 20px #07192d40}
+main{max-width:1500px}.card,.flow-card,.quick-card{border-color:#e3eaf2}
+.hero-chip{backdrop-filter:blur(5px)}
+.project-hero h2{font-size:30px;letter-spacing:-.035em}
+.flow-title{margin-top:28px}.flow-title h2{font-size:23px;letter-spacing:-.025em}
+.task-row{border-radius:10px;padding-left:7px;padding-right:5px}.task-row:hover{background:#f8fafc}
+.priority-normal{background:#ffffff18}.priority-high{background:#ffbd591f;border-color:#ffd18b55!important}
+.duty-page-head{background:linear-gradient(135deg,#10233e,#244d7a);color:#fff;border-radius:22px;padding:26px;margin-bottom:18px;box-shadow:0 14px 36px #10233e18}
+.duty-page-head h2{font-size:27px;margin:5px 0}.duty-list{display:grid;gap:10px}
+.duty-row{background:#fff;border:1px solid #e2e9f1;border-radius:16px;padding:15px 17px;display:grid;grid-template-columns:125px minmax(0,1fr) 240px;gap:16px;align-items:center;box-shadow:0 5px 18px #10233e08}
+.duty-date{font-weight:850}.duty-project{font-weight:800}.duty-row select{width:100%}
+.duty-empty{background:#fff;border:1px dashed #ccd7e4;border-radius:17px;padding:28px;text-align:center;color:#718096}
+@media(max-width:760px){.duty-row{grid-template-columns:1fr}.project-hero h2{font-size:25px}}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -124,7 +145,7 @@ function subscribe(){
 function beep(){try{let a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);g.gain.value=.05;o.frequency.value=880;o.start();o.stop(a.currentTime+.12)}catch(e){}}
 function nav(){
  let unread=notifications.filter(n=>!n.read_at).length;
- $("#nav").innerHTML=`<button data-view="dashboard">▦ &nbsp; Tableau de bord</button><button data-view="projects">☷ &nbsp; Tous les projets</button><button data-view="calendar">□ &nbsp; Calendrier</button><button data-view="my">✓ &nbsp; Mes tâches</button><button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button><div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}<div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button>${me.role==="admin"?'<button data-view="team">⚙ &nbsp; Utilisateurs</button>':""}<button id="logout">↪ &nbsp; Déconnexion</button>`;
+ $("#nav").innerHTML=`<button data-view="dashboard">▦ &nbsp; Tableau de bord</button><button data-view="projects">☷ &nbsp; Tous les projets</button><button data-view="calendar">□ &nbsp; Calendrier</button><button data-view="my">✓ &nbsp; Mes tâches</button><button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button><div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}<div class="group">Organisation</div><button data-view="duties">☾ &nbsp; Astreintes week-end</button><div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button>${me.role==="admin"?'<button data-view="team">⚙ &nbsp; Utilisateurs</button>':""}<button id="logout">↪ &nbsp; Déconnexion</button>`;
  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{current=b.dataset.view;currentProject=null;render()});
  document.querySelectorAll("[data-pole]").forEach(b=>b.onclick=()=>{current="pole";poleFilter=b.dataset.pole;render()});
  $("#logout").onclick=logout;$(".user").textContent=`${me.display_name} · @${me.username}`;
@@ -206,7 +227,7 @@ function projectView(){
  $("#view").innerHTML=`
  <div class="back" id="back">← Tous les projets</div>
  <div class="project-tools"><button class="btn secondary" id="editProject">Modifier les infos</button></div>
- <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip">⚑ ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span></div>
+ <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip ${p.priority==="Haute"?"priority-high":"priority-normal"}">⚑ Priorité : ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span></div>
  <div class="owner-strip"><div class="owner-icon">◎</div><div><div class="owner-title">Porteur du projet</div><div class="owner-value">${p.project_owner_user_id?esc(userName(p.project_owner_user_id)):(p.project_owner_name?esc(p.project_owner_name)+(p.project_owner_service?` · ${esc(p.project_owner_service)}`:""):"À renseigner")}</div></div><button class="owner-edit" id="editOwner">Modifier</button></div></section>
  <div class="flow-title"><div><h2 class="workflow-label">Demandes aux pôles</h2><div class="muted">L'essentiel du projet, pôle par pôle. Clique sur une demande pour ses notes, échanges et @mentions.</div></div></div>
  <div class="flow-grid">
@@ -221,7 +242,7 @@ function projectView(){
  <div class="quick-card"><b>📎 Fichiers</b><span class="muted">${projectFiles(p.id).length} document(s) lié(s) au projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpFiles">Voir / ajouter</button></div>
  <div class="quick-card"><b>💬 Échanges généraux</b><span class="muted">${projectComments(p.id).filter(c=>!c.context_task_id).length} commentaire(s) projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpComments">Ouvrir</button></div>
  </div>
- <section class="duty-panel"><div><b><span class="duty-icon">☾</span>Astreinte week-end</b><div class="muted" style="margin-top:4px">Rubrique indépendante · référent Médias mobilisé en astreinte si nécessaire.</div></div><select data-prole="media_weekend_referent_id">${mediaOpts}</select></section>
+
  <details class="section-fold" id="filesFold"><summary>📎 Documents, photos, PDF et Word</summary><div class="fold-body"><div class="filedrop" id="dropzone">Glisse les fichiers ici<br><span class="muted">ou clique pour les sélectionner</span><input id="fileInput" class="hidden" type="file" multiple accept="image/*,.pdf,.doc,.docx"></div><div id="fileList">${renderFiles(p.id)}</div></div></details>
  <details class="section-fold" id="commentsFold"><summary>💬 Commentaires généraux & @mentions</summary><div class="fold-body"><div id="commentsList">${renderComments(p.id)}</div><textarea id="commentBox" placeholder="Ex. @macit peux-tu valider ?"></textarea><div class="muted" style="margin:5px 0 9px">${users.filter(u=>u.active).map(u=>"@"+u.username).join(" · ")}</div><button class="btn" id="sendComment">Commenter</button></div></details>`;
  $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);$("#editOwner").onclick=()=>projectOwnerModal(p);
@@ -264,6 +285,15 @@ async function postComment(pid,parent,body){body=(body||"").trim();if(!body)retu
 }
 
 
+
+function dutiesView(){
+ $("#title").textContent="Astreintes week-end";$("#subtitle").textContent="Organisation du pôle Médias";
+ let rows=projects.filter(p=>{if(!p.event_date)return false;let d=new Date(p.event_date+"T12:00:00");return [0,6].includes(d.getDay())||p.media_weekend_referent_id}).sort((a,b)=>(a.event_date||"").localeCompare(b.event_date||""));
+ $("#view").innerHTML=`<section class="duty-page-head"><div class="eyebrow">ORGANISATION MÉDIAS</div><h2>☾ Astreintes week-end</h2><div style="color:#c6d7e9">Une vue séparée des projets pour savoir immédiatement qui assure l’astreinte Médias.</div></section>
+ <div class="duty-list">${rows.length?rows.map(p=>`<div class="duty-row"><div class="duty-date">${fmtDate(p.event_date)}</div><div><div class="duty-project">${esc(p.name)}</div><div class="muted">${esc(p.type)}</div></div><select data-duty="${p.id}">${userOptions("Médias",p.media_weekend_referent_id)}</select></div>`).join(""):`<div class="duty-empty"><b>Aucune astreinte à afficher.</b><br>Les événements du week-end apparaîtront automatiquement ici.</div>`}</div>`;
+ document.querySelectorAll("[data-duty]").forEach(x=>x.onchange=async()=>{await sb.from("projects").update({media_weekend_referent_id:x.value||null}).eq("id",x.dataset.duty);toast("Astreinte enregistrée")});
+}
+
 function projectOwnerModal(p){
  $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Porteur du projet</h2><p class="muted">Le porteur peut être une personne de la Direction de la communication ou un service / contact extérieur à l'équipe.</p>
  <div class="owner-modal-tabs"><div class="owner-choice"><b>👤 Personne de l'équipe</b><select id="ownerUser"><option value="">Aucune</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.project_owner_user_id===u.id?"selected":""}>${esc(u.display_name)}${u.pole?` · ${esc(u.pole)}`:""}</option>`).join("")}</select></div>
@@ -297,7 +327,7 @@ function projectModal(p=null){
  if(r.error)return alert(r.error.message);closeModal();toast("Projet enregistré");refresh()};
 }
 function closeModal(){$("#modal").className="hidden"}
-function render(){nav();if(current==="dashboard")dashboard();else if(current==="projects")projectsView();else if(current==="pole")projectsView(poleFilter);else if(current==="my")myTasks();else if(current==="calendar")calendar();else if(current==="validations")validations();else if(current==="team")teamView();else if(current==="notifications")notificationsView();else if(current==="project")projectView()}
+function render(){nav();if(current==="dashboard")dashboard();else if(current==="projects")projectsView();else if(current==="pole")projectsView(poleFilter);else if(current==="my")myTasks();else if(current==="calendar")calendar();else if(current==="validations")validations();else if(current==="team")teamView();else if(current==="notifications")notificationsView();else if(current==="duties")dutiesView();else if(current==="project")projectView()}
 $("#search").oninput=e=>{let q=e.target.value.trim();if(!q)return;current="projects";projectsView();let i=$("#projSearch");if(i){i.value=q;i.dispatchEvent(new Event("input"))}}
 init();
 </script></body></html>
