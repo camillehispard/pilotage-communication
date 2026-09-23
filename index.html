@@ -17,7 +17,23 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 13px;border-bottom:
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.day{background:#fff;border:1px solid #e2e8f0;border-radius:10px;min-height:110px;padding:8px}.day strong{font-size:11px}.calproj{margin-top:6px;padding:5px;background:#eaf3ff;border-radius:6px;font-size:10px;cursor:pointer}
 .modal{position:fixed;inset:0;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}.modalbox{background:#fff;width:min(620px,100%);border-radius:15px;padding:20px;max-height:90vh;overflow:auto}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;color:#475569}.formgrid label span{display:block;margin-bottom:5px}.hidden{display:none!important}.comment{background:#f8fafc;border-radius:8px;padding:8px;margin-top:7px;font-size:12px}.toast{position:fixed;right:20px;bottom:20px;background:#10233e;color:white;padding:12px 15px;border-radius:10px;z-index:100}
 @media(max-width:1050px){.metrics{grid-template-columns:repeat(2,1fr)}.task{grid-template-columns:1fr 110px 110px}.task .optional{display:none}.grid2,.grid3{grid-template-columns:1fr}}@media(max-width:760px){.app{grid-template-columns:1fr}aside{display:none}main{padding:16px}.search{min-width:0;width:150px}.calendar{grid-template-columns:repeat(2,1fr)}}
-.formgrid small{display:block;margin-top:4px}.pill{white-space:nowrap}.filedrop{border:2px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#f8fafc;cursor:pointer;margin:10px 0}.filedrop.drag{border-color:#1769e0;background:#eef6ff}.fileitem{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #edf2f7}.reply{margin-left:28px;border-left:3px solid #dbeafe;padding-left:10px}.comment-actions{margin-top:6px;display:flex;gap:6px}.loginwrap{max-width:520px;margin:60px auto}.loginwrap input{width:100%;margin:7px 0 12px}</style></head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
+.formgrid small{display:block;margin-top:4px}.pill{white-space:nowrap}.filedrop{border:2px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#f8fafc;cursor:pointer;margin:10px 0}.filedrop.drag{border-color:#1769e0;background:#eef6ff}.fileitem{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #edf2f7}.reply{margin-left:28px;border-left:3px solid #dbeafe;padding-left:10px}.comment-actions{margin-top:6px;display:flex;gap:6px}.loginwrap{max-width:520px;margin:60px auto}.loginwrap input{width:100%;margin:7px 0 12px}</style>
+<style>
+/* V3 — cockpit projet */
+.project-hero{background:linear-gradient(135deg,#10233e,#173a67);color:#fff;border:0;border-radius:20px;padding:22px;margin-bottom:18px;box-shadow:0 10px 30px #10233e18}
+.project-hero .eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#b9c9dc;font-weight:800}
+.project-hero h2{font-size:25px;margin:6px 0 10px}.hero-meta{display:flex;gap:8px;flex-wrap:wrap}.hero-chip{background:#ffffff18;border:1px solid #ffffff24;border-radius:999px;padding:7px 10px;font-size:12px}
+.flow-title{display:flex;justify-content:space-between;align-items:end;margin:22px 0 10px}.flow-title h2{font-size:20px}.flow-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.flow-card{background:#fff;border:1px solid #e5eaf1;border-radius:18px;overflow:hidden;box-shadow:0 5px 18px #10233e0a}.flow-card.wide{grid-column:1/-1}.flow-head{padding:15px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #edf1f5}.flow-name{display:flex;align-items:center;gap:10px;font-weight:800}.flow-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#eef4ff;font-size:17px}.flow-body{padding:8px 16px 13px}
+.referent-line{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f8fafc;border-radius:11px;padding:9px 10px;margin:5px 0 9px}.referent-line select{max-width:220px}
+.task-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eef2f6}.task-row:last-child{border-bottom:0}.task-title{font-weight:750;font-size:13px}.task-sub{font-size:11px;color:#718096;margin-top:3px}.status-select{font-size:11px!important;padding:6px 7px!important;max-width:145px}.task-open{border:0;background:#f0f4f8;color:#24415f;border-radius:8px;padding:7px 9px;cursor:pointer;font-weight:700;font-size:11px}
+.progressbar{height:6px;background:#edf1f5;border-radius:999px;overflow:hidden;margin-top:7px}.progressbar i{display:block;height:100%;background:#1769e0;border-radius:999px}
+.pole-count{font-size:11px;color:#64748b}.empty-action{padding:12px 0;color:#94a3b8;font-size:12px}
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 18px}.quick-card{background:#fff;border:1px solid #e5eaf1;border-radius:15px;padding:14px}.quick-card b{display:block;margin-bottom:5px}.quick-card select{width:100%;margin-top:7px}.quick-card textarea{min-height:55px;margin-top:7px}
+.project-tools{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px}.section-fold{margin-top:18px}.section-fold summary{cursor:pointer;font-weight:800;padding:13px 15px;background:#fff;border:1px solid #e5eaf1;border-radius:13px;list-style:none}.section-fold[open] summary{border-radius:13px 13px 0 0}.section-fold .fold-body{background:#fff;border:1px solid #e5eaf1;border-top:0;border-radius:0 0 13px 13px;padding:15px}
+@media(max-width:900px){.flow-grid,.quick-grid{grid-template-columns:1fr}.flow-card.wide{grid-column:auto}.task-row{grid-template-columns:1fr}.referent-line{align-items:flex-start;flex-direction:column}.referent-line select{max-width:none;width:100%}}
+</style>
+</head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
 
@@ -26,6 +42,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 13px;border-bottom:
 <script>
 const CFG={url:"https://jmgipiplloyaddnnxili.supabase.co",key:"sb_publishable_4IrqHY4u4mW48uSR26DHHw_UVtoSozV"};
 const POLES=["Médias","Événementiel","Stratégie & contenus","Vidéo","Mission cinéma et partenariat"];
+const TEAM_POLES=[...POLES,"Photographie"];
 const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Proximité","Déplacement","Commémoration","Autre"];
 const STATUSES=["À faire","En cours","À valider","À valider Direction com","Validé Direction com","En attente validation CAB","Validé CAB","En attente d’éléments","Bloqué","Programmé","Terminé"];
 let sb=null,token=localStorage.getItem("pilotage_token")||"",me=null,users=[],projects=[],tasks=[],comments=[],notifications=[],files=[];
@@ -140,32 +157,63 @@ function teamView(){
  document.querySelectorAll("[data-active]").forEach(b=>b.onclick=async()=>{let r=await sb.rpc("app_set_user_active",{p_user:b.dataset.active,p_active:b.dataset.val==="true"});if(r.error)alert(r.error.message);else refresh()});
 }
 function userModal(){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Nouvel utilisateur</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom affiché</span><input id="ud"></label><label><span>Identifiant</span><input id="uu" placeholder="prenom"></label><label><span>Mot de passe initial</span><input id="up" type="password"></label><label><span>Pôle</span><select id="upo"><option value="">—</option>${POLES.map(p=>`<option>${p}</option>`).join("")}</select></label><label><span>Rôle</span><select id="ur"><option value="user">Utilisateur</option><option value="admin">Admin</option></select></label></div><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="uc">Annuler</button> <button class="btn" id="us">Créer</button></div></div>`;
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Nouvel utilisateur</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom affiché</span><input id="ud"></label><label><span>Identifiant</span><input id="uu" placeholder="prenom"></label><label><span>Mot de passe initial</span><input id="up" type="password"></label><label><span>Pôle</span><select id="upo"><option value="">—</option>${TEAM_POLES.map(p=>`<option>${p}</option>`).join("")}</select></label><label><span>Rôle</span><select id="ur"><option value="user">Utilisateur</option><option value="admin">Admin</option></select></label></div><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="uc">Annuler</button> <button class="btn" id="us">Créer</button></div></div>`;
  $("#uc").onclick=closeModal;$("#us").onclick=async()=>{let r=await sb.rpc("app_create_user",{p_username:$("#uu").value,p_display_name:$("#ud").value,p_password:$("#up").value,p_role:$("#ur").value,p_pole:$("#upo").value||null});if(r.error)return alert(r.error.message);closeModal();toast("Utilisateur créé");refresh()};
 }
-function taskEditor(t){let owner=t.pole==="Médias"?`<span class="muted">Équipe Médias</span>`:`<select data-owner="${t.id}"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${t.assignee_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select>`;return `<div class="task"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(t.deliverable_type||t.pole)}</span><br><button class="btn secondary small" data-tasknotes="${t.id}" style="margin-top:6px">📝 Notes / @mention</button></div>${owner}<input type="date" data-due="${t.id}" value="${esc(t.due_date||"")}"><select data-status="${t.id}">${STATUSES.map(s=>`<option ${s===t.status?"selected":""}>${esc(s)}</option>`).join("")}</select><div><button class="btn danger small" data-del="${t.id}">×</button></div></div>`}
+
+function poleUsers(pole){return users.filter(u=>u.active&&u.pole===pole)}
+function userOptions(pole,selected,allowAll=false){
+ let arr=allowAll?users.filter(u=>u.active):poleUsers(pole);
+ return `<option value="">À attribuer</option>`+arr.map(u=>`<option value="${u.id}" ${selected===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("");
+}
+function taskProgress(arr){if(!arr.length)return 0;let done=arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length;return Math.round(done/arr.length*100)}
+function compactTask(t){
+ let noteCount=comments.filter(c=>c.context_task_id===t.id).length;
+ return `<div class="task-row"><div><div class="task-title">${esc(t.title)}</div><div class="task-sub">${t.due_date?"📅 "+fmtDate(t.due_date):"Sans échéance"}${t.notes?" · 📝 note":""}${noteCount?" · 💬 "+noteCount:""}</div></div><select class="status-select" data-status="${t.id}">${STATUSES.map(x=>`<option ${x===t.status?"selected":""}>${esc(x)}</option>`).join("")}</select><button class="task-open" data-tasknotes="${t.id}">Ouvrir →</button></div>`;
+}
+function poleCard(p,po,icon,referentField=null){
+ let arr=projectTasks(p.id).filter(t=>t.pole===po),pct=taskProgress(arr);
+ let ref=referentField?`<div class="referent-line"><span><b>Référent·e</b><br><span class="muted">${esc(po)}</span></span><select data-prole="${referentField}">${userOptions(po,p[referentField])}</select></div>`:"";
+ return `<section class="flow-card"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><div><span class="pole-count">${arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length}/${arr.length}</span> <button class="btn secondary small" data-addtask="${esc(po)}">+</button></div></div><div class="flow-body">${ref}${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
+}
 function projectView(){
  let p=projects.find(x=>x.id===currentProject);if(!p){current="projects";return render()}
- $("#title").textContent=p.name;$("#subtitle").textContent=`${fmtDate(p.event_date)} · ${p.type} · Priorité ${p.priority||"Normale"}`;
- let poleCards=POLES.map(po=>`<section class="card polecard"><div class="cardhead"><h2>${esc(po)}</h2><button class="btn secondary small" data-addtask="${esc(po)}">+ Ajouter une tâche</button></div><div class="pad">${projectTasks(p.id).filter(t=>t.pole===po).map(taskEditor).join("")||'<span class="muted">Aucune tâche.</span>'}</div></section>`).join("");
- $("#view").innerHTML=`<div class="back" id="back">← Retour aux projets</div><div style="text-align:right;margin-bottom:10px"><button class="btn secondary" id="editProject">Modifier le projet</button></div>
- <section class="card"><div class="cardhead"><h2>Référent·es du projet</h2></div><div class="pad grid2">
- <label><b>Événementiel</b><br><span class="muted">Référent·e du projet</span><select data-prole="event_referent_id"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.event_referent_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select></label>
- <label><b>Stratégie & contenus</b><br><span class="muted">Référent·e du projet</span><select data-prole="strategy_referent_id"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.strategy_referent_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select></label>
- </div></section>
- <section class="card"><div class="cardhead"><h2>Astreinte week-end</h2><span class="muted">Pôle Médias</span></div><div class="pad"><label><b>Référent·e Médias</b><select data-prole="media_weekend_referent_id"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.media_weekend_referent_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select></label></div></section>
- <section class="card"><div class="cardhead"><h2>Photographie</h2><span class="muted">Couverture de l’événement</span></div><div class="pad grid2"><label><b>Photographe / référent·e photo</b><select data-prole="photographer_id"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.photographer_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select></label><label><b>Notes photo</b><textarea id="photoNotes" placeholder="Horaires, besoins, brief photo…">${esc(p.photography_notes||"")}</textarea></label></div></section>
- ${poleCards}
- <section class="card"><div class="cardhead"><h2>Fichiers du projet</h2><span class="muted">Photos · PDF · Word</span></div><div class="pad"><div class="filedrop" id="dropzone">Glisse les fichiers ici<br><span class="muted">ou clique pour les sélectionner</span><input id="fileInput" class="hidden" type="file" multiple accept="image/*,.pdf,.doc,.docx"></div><div id="fileList">${renderFiles(p.id)}</div></div></section>
- <section class="card"><div class="cardhead"><h2>Commentaires & @mentions</h2><span class="muted">Tape @identifiant pour notifier quelqu’un</span></div><div class="pad"><div id="commentsList">${renderComments(p.id)}</div><textarea id="commentBox" placeholder="Ex. @macit peux-tu valider ?"></textarea><div class="muted" style="margin:5px 0 9px">${users.filter(u=>u.active).map(u=>"@"+u.username).join(" · ")}</div><button class="btn" id="sendComment">Commenter</button></div></section>`;
+ $("#title").textContent=p.name;$("#subtitle").textContent="Vue projet · qui doit faire quoi ?";
+ let date=p.event_date?new Date(p.event_date+"T12:00:00"):null,isWeekend=date&&[0,6].includes(date.getDay());
+ let eventPeople=poleUsers("Événementiel");
+ let photoPeople=poleUsers("Photographie");
+ let photoOpts=(photoPeople.length?photoPeople:users.filter(u=>u.active)).map(u=>`<option value="${u.id}" ${p.photographer_id===u.id?"selected":""}>${esc(u.display_name)}${photoPeople.length?"":" · "+esc(u.pole||"")}</option>`).join("");
+ let mediaOpts=userOptions("Médias",p.media_weekend_referent_id);
+ let eventOpts=userOptions("Événementiel",p.event_referent_id);
+ let strategyOpts=userOptions("Stratégie & contenus",p.strategy_referent_id);
+ $("#view").innerHTML=`
+ <div class="back" id="back">← Tous les projets</div>
+ <div class="project-tools"><button class="btn secondary" id="editProject">Modifier les infos</button></div>
+ <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip">⚑ ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span></div>
+ <div style="margin-top:16px;background:#ffffff10;border-radius:13px;padding:12px 14px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap"><div><div class="eyebrow">PILOTAGE DE L'ÉVÉNEMENT</div><b>${p.event_referent_id?esc(userName(p.event_referent_id)):"Référent·e Événementiel à attribuer"}</b></div><select data-prole="event_referent_id" style="min-width:210px">${eventOpts}</select></div></section>
+ <div class="flow-title"><div><h2>Demandes aux pôles</h2><div class="muted">L'essentiel du projet, pôle par pôle. Clique sur une demande pour ses notes, échanges et @mentions.</div></div></div>
+ <div class="flow-grid">
+ ${poleCard(p,"Événementiel","📍",null)}
+ ${poleCard(p,"Stratégie & contenus","✦","strategy_referent_id")}
+ ${poleCard(p,"Médias","◉",null)}
+ ${poleCard(p,"Vidéo","▶",null)}
+ ${poleCard(p,"Mission cinéma et partenariat","◆",null)}
+ <section class="flow-card"><div class="flow-head"><div class="flow-name"><span class="flow-icon">📷</span>Photographie</div></div><div class="flow-body"><div class="referent-line"><span><b>Couverture photo</b><br><span class="muted">Qui couvre l'événement ?</span></span><select data-prole="photographer_id"><option value="">À attribuer</option>${photoOpts}</select></div><textarea id="photoNotes" placeholder="Brief photo, horaires, moments à couvrir…">${esc(p.photography_notes||"")}</textarea></div></section>
+ </div>
+ <div class="quick-grid">
+ <div class="quick-card"><b>🌙 Astreinte week-end</b><span class="muted">${isWeekend?"Événement le week-end : indique le référent Médias.":"À renseigner uniquement si une astreinte est nécessaire."}</span><select data-prole="media_weekend_referent_id">${mediaOpts}</select></div>
+ <div class="quick-card"><b>📎 Fichiers</b><span class="muted">${projectFiles(p.id).length} document(s) lié(s) au projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpFiles">Voir / ajouter</button></div>
+ <div class="quick-card"><b>💬 Échanges généraux</b><span class="muted">${projectComments(p.id).filter(c=>!c.context_task_id).length} commentaire(s) projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpComments">Ouvrir</button></div>
+ </div>
+ <details class="section-fold" id="filesFold"><summary>📎 Documents, photos, PDF et Word</summary><div class="fold-body"><div class="filedrop" id="dropzone">Glisse les fichiers ici<br><span class="muted">ou clique pour les sélectionner</span><input id="fileInput" class="hidden" type="file" multiple accept="image/*,.pdf,.doc,.docx"></div><div id="fileList">${renderFiles(p.id)}</div></div></details>
+ <details class="section-fold" id="commentsFold"><summary>💬 Commentaires généraux & @mentions</summary><div class="fold-body"><div id="commentsList">${renderComments(p.id)}</div><textarea id="commentBox" placeholder="Ex. @macit peux-tu valider ?"></textarea><div class="muted" style="margin:5px 0 9px">${users.filter(u=>u.active).map(u=>"@"+u.username).join(" · ")}</div><button class="btn" id="sendComment">Commenter</button></div></details>`;
  $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);
+ $("#jumpFiles").onclick=()=>{$("#filesFold").open=true;$("#filesFold").scrollIntoView({behavior:"smooth"})};
+ $("#jumpComments").onclick=()=>{$("#commentsFold").open=true;$("#commentsFold").scrollIntoView({behavior:"smooth"})};
  document.querySelectorAll("[data-addtask]").forEach(b=>b.onclick=()=>taskModal(p,b.dataset.addtask));
- document.querySelectorAll("[data-status]").forEach(s=>s.onchange=()=>sb.from("tasks").update({status:s.value,updated_at:new Date().toISOString()}).eq("id",s.dataset.status));
- document.querySelectorAll("[data-owner]").forEach(s=>s.onchange=async()=>{await sb.from("tasks").update({assignee_id:s.value||null,updated_at:new Date().toISOString()}).eq("id",s.dataset.owner);toast("Affectation enregistrée")});
- document.querySelectorAll("[data-due]").forEach(s=>s.onchange=()=>sb.from("tasks").update({due_date:s.value||null,updated_at:new Date().toISOString()}).eq("id",s.dataset.due));
- document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(confirm("Supprimer cette tâche ?"))await sb.from("tasks").delete().eq("id",b.dataset.del)});
- document.querySelectorAll("[data-prole]").forEach(x=>x.onchange=async()=>{let row={};row[x.dataset.prole]=x.value||null;await sb.from("projects").update(row).eq("id",p.id);toast("Référent·e enregistré·e")});
- $("#photoNotes").onchange=async()=>{await sb.from("projects").update({photography_notes:$("#photoNotes").value}).eq("id",p.id);toast("Notes photo enregistrées")};
+ document.querySelectorAll("[data-status]").forEach(x=>x.onchange=async()=>{await sb.from("tasks").update({status:x.value,updated_at:new Date().toISOString()}).eq("id",x.dataset.status);toast("Statut enregistré");refresh()});
+ document.querySelectorAll("[data-prole]").forEach(x=>x.onchange=async()=>{let row={};row[x.dataset.prole]=x.value||null;await sb.from("projects").update(row).eq("id",p.id);toast("Référent·e enregistré·e");refresh()});
+ $("#photoNotes").onchange=async()=>{await sb.from("projects").update({photography_notes:$("#photoNotes").value}).eq("id",p.id);toast("Brief photo enregistré")};
  document.querySelectorAll("[data-tasknotes]").forEach(b=>b.onclick=()=>taskNotesModal(p,projectTasks(p.id).find(t=>t.id===b.dataset.tasknotes)));
  bindFiles(p);bindComments(p);
 }
