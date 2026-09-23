@@ -33,6 +33,23 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 13px;border-bottom:
 .project-tools{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px}.section-fold{margin-top:18px}.section-fold summary{cursor:pointer;font-weight:800;padding:13px 15px;background:#fff;border:1px solid #e5eaf1;border-radius:13px;list-style:none}.section-fold[open] summary{border-radius:13px 13px 0 0}.section-fold .fold-body{background:#fff;border:1px solid #e5eaf1;border-top:0;border-radius:0 0 13px 13px;padding:15px}
 @media(max-width:900px){.flow-grid,.quick-grid{grid-template-columns:1fr}.flow-card.wide{grid-column:auto}.task-row{grid-template-columns:1fr}.referent-line{align-items:flex-start;flex-direction:column}.referent-line select{max-width:none;width:100%}}
 </style>
+
+<style>
+/* V4 — direction artistique plus graphique */
+.project-hero{position:relative;overflow:hidden;padding:28px!important}
+.project-hero:after{content:"";position:absolute;width:230px;height:230px;border-radius:50%;right:-75px;top:-110px;background:#ffffff0b}
+.project-kicker{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:900;letter-spacing:.11em;text-transform:uppercase;color:#bcd0e7}
+.owner-strip{position:relative;margin-top:20px;background:#fff;color:#10233e;border-radius:16px;padding:14px;display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:12px;align-items:center;box-shadow:0 8px 24px #06142622}
+.owner-icon{width:42px;height:42px;border-radius:13px;background:#eaf2ff;display:grid;place-items:center;font-size:20px}
+.owner-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#6b7d90;font-weight:800}.owner-value{font-size:15px;font-weight:850;margin-top:2px}
+.owner-edit{border:0;background:#eef4fb;color:#173a67;border-radius:10px;padding:8px 10px;font-weight:800;cursor:pointer}
+.workflow-label{display:flex;align-items:center;gap:9px}.workflow-label:before{content:"";width:4px;height:24px;border-radius:9px;background:#1769e0}
+.flow-card{transition:.15s transform,.15s box-shadow}.flow-card:hover{transform:translateY(-2px);box-shadow:0 10px 25px #10233e12}
+.flow-card[data-pole="Médias"] .flow-icon{background:#e9f3ff}.flow-card[data-pole="Stratégie & contenus"] .flow-icon{background:#f3edff}.flow-card[data-pole="Événementiel"] .flow-icon{background:#fff2e7}.flow-card[data-pole="Vidéo"] .flow-icon{background:#ffedf0}.flow-card[data-pole="Mission cinéma et partenariat"] .flow-icon{background:#eaf8f3}
+.duty-panel{margin-top:20px;border-radius:18px;background:#132b49;color:white;padding:17px 18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,330px);align-items:center;gap:18px}.duty-panel select{background:#fff}.duty-panel .muted{color:#bfd0e2}.duty-icon{font-size:24px;margin-right:8px}
+.owner-modal-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.owner-choice{border:1px solid #dfe6ef;border-radius:12px;padding:11px;background:#f8fafc}.owner-choice b{display:block;margin-bottom:7px}
+@media(max-width:700px){.owner-strip{grid-template-columns:42px 1fr}.owner-edit{grid-column:1/-1}.duty-panel{grid-template-columns:1fr}}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -174,7 +191,7 @@ function compactTask(t){
 function poleCard(p,po,icon,referentField=null){
  let arr=projectTasks(p.id).filter(t=>t.pole===po),pct=taskProgress(arr);
  let ref=referentField?`<div class="referent-line"><span><b>Référent·e</b><br><span class="muted">${esc(po)}</span></span><select data-prole="${referentField}">${userOptions(po,p[referentField])}</select></div>`:"";
- return `<section class="flow-card"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><div><span class="pole-count">${arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length}/${arr.length}</span> <button class="btn secondary small" data-addtask="${esc(po)}">+</button></div></div><div class="flow-body">${ref}${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
+ return `<section class="flow-card" data-pole="${esc(po)}"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><div><span class="pole-count">${arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length}/${arr.length}</span> <button class="btn secondary small" data-addtask="${esc(po)}">+</button></div></div><div class="flow-body">${ref}${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
 }
 function projectView(){
  let p=projects.find(x=>x.id===currentProject);if(!p){current="projects";return render()}
@@ -190,8 +207,8 @@ function projectView(){
  <div class="back" id="back">← Tous les projets</div>
  <div class="project-tools"><button class="btn secondary" id="editProject">Modifier les infos</button></div>
  <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip">⚑ ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span></div>
- <div style="margin-top:16px;background:#ffffff10;border-radius:13px;padding:12px 14px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap"><div><div class="eyebrow">PILOTAGE DE L'ÉVÉNEMENT</div><b>${p.event_referent_id?esc(userName(p.event_referent_id)):"Référent·e Événementiel à attribuer"}</b></div><select data-prole="event_referent_id" style="min-width:210px">${eventOpts}</select></div></section>
- <div class="flow-title"><div><h2>Demandes aux pôles</h2><div class="muted">L'essentiel du projet, pôle par pôle. Clique sur une demande pour ses notes, échanges et @mentions.</div></div></div>
+ <div class="owner-strip"><div class="owner-icon">◎</div><div><div class="owner-title">Porteur du projet</div><div class="owner-value">${p.project_owner_user_id?esc(userName(p.project_owner_user_id)):(p.project_owner_name?esc(p.project_owner_name)+(p.project_owner_service?` · ${esc(p.project_owner_service)}`:""):"À renseigner")}</div></div><button class="owner-edit" id="editOwner">Modifier</button></div></section>
+ <div class="flow-title"><div><h2 class="workflow-label">Demandes aux pôles</h2><div class="muted">L'essentiel du projet, pôle par pôle. Clique sur une demande pour ses notes, échanges et @mentions.</div></div></div>
  <div class="flow-grid">
  ${poleCard(p,"Événementiel","📍",null)}
  ${poleCard(p,"Stratégie & contenus","✦","strategy_referent_id")}
@@ -200,14 +217,14 @@ function projectView(){
  ${poleCard(p,"Mission cinéma et partenariat","◆",null)}
  <section class="flow-card"><div class="flow-head"><div class="flow-name"><span class="flow-icon">📷</span>Photographie</div></div><div class="flow-body"><div class="referent-line"><span><b>Couverture photo</b><br><span class="muted">Qui couvre l'événement ?</span></span><select data-prole="photographer_id"><option value="">À attribuer</option>${photoOpts}</select></div><textarea id="photoNotes" placeholder="Brief photo, horaires, moments à couvrir…">${esc(p.photography_notes||"")}</textarea></div></section>
  </div>
- <div class="quick-grid">
- <div class="quick-card"><b>🌙 Astreinte week-end</b><span class="muted">${isWeekend?"Événement le week-end : indique le référent Médias.":"À renseigner uniquement si une astreinte est nécessaire."}</span><select data-prole="media_weekend_referent_id">${mediaOpts}</select></div>
+ <div class="quick-grid" style="grid-template-columns:1fr 1fr">
  <div class="quick-card"><b>📎 Fichiers</b><span class="muted">${projectFiles(p.id).length} document(s) lié(s) au projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpFiles">Voir / ajouter</button></div>
  <div class="quick-card"><b>💬 Échanges généraux</b><span class="muted">${projectComments(p.id).filter(c=>!c.context_task_id).length} commentaire(s) projet.</span><br><button class="btn secondary small" style="margin-top:9px" id="jumpComments">Ouvrir</button></div>
  </div>
+ <section class="duty-panel"><div><b><span class="duty-icon">☾</span>Astreinte week-end</b><div class="muted" style="margin-top:4px">Rubrique indépendante · référent Médias mobilisé en astreinte si nécessaire.</div></div><select data-prole="media_weekend_referent_id">${mediaOpts}</select></section>
  <details class="section-fold" id="filesFold"><summary>📎 Documents, photos, PDF et Word</summary><div class="fold-body"><div class="filedrop" id="dropzone">Glisse les fichiers ici<br><span class="muted">ou clique pour les sélectionner</span><input id="fileInput" class="hidden" type="file" multiple accept="image/*,.pdf,.doc,.docx"></div><div id="fileList">${renderFiles(p.id)}</div></div></details>
  <details class="section-fold" id="commentsFold"><summary>💬 Commentaires généraux & @mentions</summary><div class="fold-body"><div id="commentsList">${renderComments(p.id)}</div><textarea id="commentBox" placeholder="Ex. @macit peux-tu valider ?"></textarea><div class="muted" style="margin:5px 0 9px">${users.filter(u=>u.active).map(u=>"@"+u.username).join(" · ")}</div><button class="btn" id="sendComment">Commenter</button></div></details>`;
- $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);
+ $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);$("#editOwner").onclick=()=>projectOwnerModal(p);
  $("#jumpFiles").onclick=()=>{$("#filesFold").open=true;$("#filesFold").scrollIntoView({behavior:"smooth"})};
  $("#jumpComments").onclick=()=>{$("#commentsFold").open=true;$("#commentsFold").scrollIntoView({behavior:"smooth"})};
  document.querySelectorAll("[data-addtask]").forEach(b=>b.onclick=()=>taskModal(p,b.dataset.addtask));
@@ -244,6 +261,17 @@ function bindComments(p){
 async function postComment(pid,parent,body){body=(body||"").trim();if(!body)return;let r=await sb.from("comments").insert({project_id:pid,parent_id:parent||null,author_id:me.id,body}).select().single();if(r.error)return alert(r.error.message);
  let names=[...body.matchAll(/@([A-Za-z0-9._-]+)/g)].map(m=>m[1].toLowerCase());for(let name of new Set(names)){let u=users.find(x=>x.username.toLowerCase()===name);if(u&&u.id!==me.id){await sb.from("mentions").insert({comment_id:r.data.id,mentioned_user_id:u.id});await sb.from("notifications").insert({user_id:u.id,actor_id:me.id,project_id:pid,task_id:null,type:"mention",message:`${me.display_name} vous a mentionné·e : ${body}`})}}
  toast("Commentaire ajouté");refresh()
+}
+
+
+function projectOwnerModal(p){
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Porteur du projet</h2><p class="muted">Le porteur peut être une personne de la Direction de la communication ou un service / contact extérieur à l'équipe.</p>
+ <div class="owner-modal-tabs"><div class="owner-choice"><b>👤 Personne de l'équipe</b><select id="ownerUser"><option value="">Aucune</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${p.project_owner_user_id===u.id?"selected":""}>${esc(u.display_name)}${u.pole?` · ${esc(u.pole)}`:""}</option>`).join("")}</select></div>
+ <div class="owner-choice"><b>✎ Porteur libre</b><input id="ownerName" placeholder="Nom / fonction / structure" value="${esc(p.project_owner_name||"")}"><input id="ownerService" style="margin-top:7px" placeholder="Service, direction, partenaire…" value="${esc(p.project_owner_service||"")}"></div></div>
+ <p class="muted">Si tu choisis une personne de l'équipe, le champ libre sera ignoré.</p>
+ <div style="text-align:right;margin-top:15px"><button class="btn secondary" id="ownerCancel">Annuler</button> <button class="btn" id="ownerSave">Enregistrer</button></div></div>`;
+ $("#ownerCancel").onclick=closeModal;
+ $("#ownerSave").onclick=async()=>{let uid=$("#ownerUser").value||null;await sb.from("projects").update({project_owner_user_id:uid,project_owner_name:uid?null:($("#ownerName").value.trim()||null),project_owner_service:uid?null:($("#ownerService").value.trim()||null)}).eq("id",p.id);closeModal();toast("Porteur du projet enregistré");refresh()};
 }
 
 function taskNotesModal(p,t){
