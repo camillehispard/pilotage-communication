@@ -17,191 +17,188 @@ table{width:100%;border-collapse:collapse}th,td{padding:11px 13px;border-bottom:
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.day{background:#fff;border:1px solid #e2e8f0;border-radius:10px;min-height:110px;padding:8px}.day strong{font-size:11px}.calproj{margin-top:6px;padding:5px;background:#eaf3ff;border-radius:6px;font-size:10px;cursor:pointer}
 .modal{position:fixed;inset:0;background:#0f172a99;display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}.modalbox{background:#fff;width:min(620px,100%);border-radius:15px;padding:20px;max-height:90vh;overflow:auto}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.formgrid label{font-size:12px;color:#475569}.formgrid label span{display:block;margin-bottom:5px}.hidden{display:none!important}.comment{background:#f8fafc;border-radius:8px;padding:8px;margin-top:7px;font-size:12px}.toast{position:fixed;right:20px;bottom:20px;background:#10233e;color:white;padding:12px 15px;border-radius:10px;z-index:100}
 @media(max-width:1050px){.metrics{grid-template-columns:repeat(2,1fr)}.task{grid-template-columns:1fr 110px 110px}.task .optional{display:none}.grid2,.grid3{grid-template-columns:1fr}}@media(max-width:760px){.app{grid-template-columns:1fr}aside{display:none}main{padding:16px}.search{min-width:0;width:150px}.calendar{grid-template-columns:repeat(2,1fr)}}
-.formgrid small{display:block;margin-top:4px}.pill{white-space:nowrap}</style></head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
+.formgrid small{display:block;margin-top:4px}.pill{white-space:nowrap}.filedrop{border:2px dashed #cbd5e1;border-radius:12px;padding:18px;text-align:center;background:#f8fafc;cursor:pointer;margin:10px 0}.filedrop.drag{border-color:#1769e0;background:#eef6ff}.fileitem{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #edf2f7}.reply{margin-left:28px;border-left:3px solid #dbeafe;padding-left:10px}.comment-actions{margin-top:6px;display:flex;gap:6px}.loginwrap{max-width:520px;margin:60px auto}.loginwrap input{width:100%;margin:7px 0 12px}</style></head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL="https://jmgipiplloyaddnnxili.supabase.co";
-const SUPABASE_KEY="sb_publishable_4IrqHY4u4mW48uSR26DHHw_UVtoSozV";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
+const CFG={url:"https://jmgipiplloyaddnnxili.supabase.co",key:"sb_publishable_4IrqHY4u4mW48uSR26DHHw_UVtoSozV"};
 const POLES=["Médias","Événementiel","Stratégie & contenus","Vidéo","Mission cinéma et partenariat"];
-const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Autre"];
+const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Proximité","Déplacement","Commémoration","Autre"];
 const STATUSES=["À faire","En cours","À valider","À valider Direction com","Validé Direction com","En attente validation CAB","Validé CAB","En attente d’éléments","Bloqué","Programmé","Terminé"];
-let me=null, profiles=[], projects=[], tasks=[], comments=[], notifications=[];
-let current="dashboard", currentProject=null, poleFilter=null;
-
-const $=s=>document.querySelector(s);
-const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+let sb=null,token=localStorage.getItem("pilotage_token")||"",me=null,users=[],projects=[],tasks=[],comments=[],notifications=[],files=[];
+let current="dashboard",currentProject=null,poleFilter=null;
+const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const fmtDate=s=>s?new Date(s+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"}):"Date à confirmer";
 const toast=t=>{let e=$("#toast");e.textContent=t;e.classList.remove("hidden");setTimeout(()=>e.classList.add("hidden"),1800)};
-const profileName=id=>profiles.find(x=>x.id===id)?.full_name||"À attribuer";
+const makeClient=t=>supabase.createClient(CFG.url,CFG.key,{global:{headers:t?{"x-app-token":t}:{}}});
+const userName=id=>users.find(x=>x.id===id)?.display_name||"À attribuer";
 
 async function init(){
- const {data:{session}}=await sb.auth.getSession();
- if(!session) return loginView();
- const {data:p,error}=await sb.rpc("claim_profile");
- if(error){console.error(error);return loginView("Connexion impossible : "+error.message)}
- me=p;
- await loadAll();
- subscribeRealtime();
- render();
+ sb=makeClient(token);
+ if(token){
+   let r=await sb.from("app_users").select("id,username,display_name,role,pole,active").order("display_name");
+   if(!r.error){users=r.data||[];me=users.find(x=>x.id===localStorage.getItem("pilotage_user"));if(me?.active){await enter();return}}
+ }
+ token="";localStorage.removeItem("pilotage_token");localStorage.removeItem("pilotage_user");sb=makeClient();
+ let h=await sb.rpc("app_has_users"); loginView(!h.data);
 }
-function loginView(msg=""){
- $("#title").textContent="Pilotage Communication";
- $("#subtitle").textContent="Espace collaboratif de la Direction de la communication.";
- $("#view").innerHTML=`<section class="card" style="max-width:560px;margin:60px auto"><div class="cardhead"><h2>Connexion</h2></div><div class="pad">
- <p class="muted">Connectez-vous avec votre adresse professionnelle. Vous recevrez un lien de connexion par e-mail.</p>
+function loginView(first=false,msg=""){
+ $("#nav").innerHTML="";$(".user").textContent="";$("#search").classList.add("hidden");
+ $("#title").textContent="Pilotage Communication";$("#subtitle").textContent="Espace collaboratif de la Direction de la communication.";
+ $("#view").innerHTML=`<section class="card loginwrap"><div class="cardhead"><h2>${first?"Créer le premier compte administrateur":"Connexion équipe"}</h2></div><div class="pad">
+ ${first?`<label class="muted">Nom affiché</label><input id="display" value="Camille Hispard">`:""}
+ <label class="muted">Identifiant</label><input id="username" autocomplete="username" placeholder="Ex. camille">
+ <label class="muted">Mot de passe</label><input id="password" type="password" autocomplete="${first?"new-password":"current-password"}" placeholder="Mot de passe">
  ${msg?`<p class="pill block">${esc(msg)}</p>`:""}
- <label class="muted">Adresse e-mail</label><input id="loginEmail" type="email" style="width:100%;margin:7px 0 12px" placeholder="prenom.nom@...">
- <button class="btn" id="loginBtn">Recevoir mon lien de connexion</button></div></section>`;
- $("#loginBtn").onclick=async()=>{let email=$("#loginEmail").value.trim();if(!email)return alert("Indiquez votre adresse e-mail.");
-   const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin}});
-   if(error) alert(error.message); else toast("Lien de connexion envoyé par e-mail");
+ <button class="btn" id="loginBtn">${first?"Créer mon compte":"Se connecter"}</button>
+ <p class="muted" style="margin-top:12px">Aucun e-mail n’est nécessaire pour se connecter.</p></div></section>`;
+ $("#loginBtn").onclick=async()=>{
+   let u=$("#username").value.trim(),p=$("#password").value;if(!u||!p)return;
+   if(first){let r=await sb.rpc("app_bootstrap_admin",{p_username:u,p_display_name:$("#display").value.trim()||u,p_password:p});if(r.error)return loginView(true,r.error.message)}
+   let r=await sb.rpc("app_login",{p_username:u,p_password:p});if(r.error)return loginView(false,r.error.message);
+   let x=r.data?.[0];token=x.token;localStorage.setItem("pilotage_token",token);localStorage.setItem("pilotage_user",x.user_id);sb=makeClient(token);me={id:x.user_id,username:x.username,display_name:x.display_name,role:x.role,pole:x.pole,active:true};await enter();
  };
 }
+async function enter(){ $("#search").classList.remove("hidden"); await loadAll();subscribe();render() }
+async function logout(){try{await sb.rpc("app_logout",{p_token:token})}catch(e){}localStorage.removeItem("pilotage_token");localStorage.removeItem("pilotage_user");location.reload()}
 async function loadAll(){
- const [a,b,c,d,e]=await Promise.all([
-  sb.from("profiles").select("*").order("full_name"),
+ let [u,p,t,c,n,f]=await Promise.all([
+  sb.from("app_users").select("id,username,display_name,role,pole,active").order("display_name"),
   sb.from("projects").select("*").order("event_date",{ascending:true,nullsFirst:false}),
   sb.from("tasks").select("*").order("created_at"),
-  sb.from("comments").select("*").order("created_at",{ascending:false}),
-  sb.from("notifications").select("*").order("created_at",{ascending:false})
+  sb.from("comments").select("*").order("created_at"),
+  sb.from("notifications").select("*").eq("user_id",me.id).order("created_at",{ascending:false}),
+  sb.from("project_files").select("*").order("created_at",{ascending:false})
  ]);
- profiles=a.data||[]; projects=b.data||[]; tasks=c.data||[]; comments=d.data||[]; notifications=e.data||[];
+ users=u.data||[];projects=p.data||[];tasks=t.data||[];comments=c.data||[];notifications=n.data||[];files=f.data||[];
 }
-function subscribeRealtime(){
+let rtimer;
+function refresh(){clearTimeout(rtimer);rtimer=setTimeout(async()=>{await loadAll();render()},200)}
+function subscribe(){
  sb.channel("pilotage-live")
  .on("postgres_changes",{event:"*",schema:"public",table:"projects"},refresh)
  .on("postgres_changes",{event:"*",schema:"public",table:"tasks"},refresh)
  .on("postgres_changes",{event:"*",schema:"public",table:"comments"},refresh)
- .on("postgres_changes",{event:"*",schema:"public",table:"notifications"},refresh)
- .on("postgres_changes",{event:"*",schema:"public",table:"profiles"},refresh)
+ .on("postgres_changes",{event:"*",schema:"public",table:"project_files"},refresh)
+ .on("postgres_changes",{event:"*",schema:"public",table:"app_users"},refresh)
+ .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${me.id}`},()=>{beep();refresh()})
  .subscribe();
 }
-let refreshTimer;
-function refresh(){clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{await loadAll();render()},250)}
+function beep(){try{let a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);g.gain.value=.05;o.frequency.value=880;o.start();o.stop(a.currentTime+.12)}catch(e){}}
 function nav(){
- const unread=notifications.filter(n=>!n.read_at).length;
- $("#nav").innerHTML=`
- <button data-view="dashboard">▦ &nbsp; Tableau de bord</button>
- <button data-view="projects">☷ &nbsp; Tous les projets</button>
- <button data-view="calendar">□ &nbsp; Calendrier</button>
- <button data-view="my">✓ &nbsp; Mes tâches</button>
- <button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button>
- <div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}
- <div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button><button data-view="team">⚙ &nbsp; Équipe & paramètres</button>
- <button id="logout">↪ &nbsp; Déconnexion</button>`;
+ let unread=notifications.filter(n=>!n.read_at).length;
+ $("#nav").innerHTML=`<button data-view="dashboard">▦ &nbsp; Tableau de bord</button><button data-view="projects">☷ &nbsp; Tous les projets</button><button data-view="calendar">□ &nbsp; Calendrier</button><button data-view="my">✓ &nbsp; Mes tâches</button><button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button><div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}<div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button>${me.role==="admin"?'<button data-view="team">⚙ &nbsp; Utilisateurs</button>':""}<button id="logout">↪ &nbsp; Déconnexion</button>`;
  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{current=b.dataset.view;currentProject=null;render()});
  document.querySelectorAll("[data-pole]").forEach(b=>b.onclick=()=>{current="pole";poleFilter=b.dataset.pole;render()});
- $("#logout").onclick=async()=>{await sb.auth.signOut();location.reload()};
- $(".user").innerHTML=`${esc((me?.full_name||"Utilisateur").split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase())} &nbsp; ${esc(me?.full_name||"Utilisateur")}`;
+ $("#logout").onclick=logout;$(".user").textContent=`${me.display_name} · @${me.username}`;
 }
-function projectTasks(pid){return tasks.filter(t=>t.project_id===pid)}
-function projectComments(pid){return comments.filter(c=>c.project_id===pid)}
+function projectTasks(id){return tasks.filter(t=>t.project_id===id)}
+function projectComments(id){return comments.filter(c=>c.project_id===id)}
+function projectFiles(id){return files.filter(f=>f.project_id===id)}
 function dashboard(){
- $("#title").textContent=`Bonjour ${me?.full_name?.split(" ")[0]||""} 👋`;$("#subtitle").textContent="Pilotage partagé des projets et actions de communication.";
- const active=projects.length, blocked=tasks.filter(t=>t.status==="Bloqué").length, dir=tasks.filter(t=>t.status==="À valider Direction com").length, cab=tasks.filter(t=>t.status==="En attente validation CAB").length, done=tasks.filter(t=>t.status==="Terminé"||t.status==="Validé CAB").length;
- $("#view").innerHTML=`<div class="metrics"><div class="metric"><strong>${active}</strong><span>Projets</span></div><div class="metric yellow"><strong>${dir}</strong><span>À valider Direction com</span></div><div class="metric yellow"><strong>${cab}</strong><span>En attente CAB</span></div><div class="metric red"><strong>${blocked}</strong><span>Bloquées</span></div><div class="metric greenbox"><strong>${done}</strong><span>Tâches terminées</span></div></div>
- <section class="card"><div class="cardhead"><h2>Projets</h2><button class="btn" id="newProject">+ Nouveau projet</button></div>${projectTable(projects.slice(0,12))}</section>`;
+ $("#title").textContent=`Bonjour ${me.display_name.split(" ")[0]} 👋`;$("#subtitle").textContent="Pilotage partagé des projets et actions de communication.";
+ let blocked=tasks.filter(t=>t.status==="Bloqué").length,dir=tasks.filter(t=>t.status==="À valider Direction com").length,cab=tasks.filter(t=>t.status==="En attente validation CAB").length,done=tasks.filter(t=>["Terminé","Validé CAB"].includes(t.status)).length;
+ $("#view").innerHTML=`<div class="metrics"><div class="metric"><strong>${projects.length}</strong><span>Projets</span></div><div class="metric yellow"><strong>${dir}</strong><span>À valider Direction com</span></div><div class="metric yellow"><strong>${cab}</strong><span>En attente CAB</span></div><div class="metric red"><strong>${blocked}</strong><span>Bloquées</span></div><div class="metric greenbox"><strong>${done}</strong><span>Tâches terminées</span></div></div><section class="card"><div class="cardhead"><h2>Projets</h2><button class="btn" id="newProject">+ Nouveau projet</button></div>${projectTable(projects.slice(0,15))}</section>`;
  $("#newProject").onclick=()=>projectModal();bindProjectRows();
 }
-function projectTable(list){
- return `<table><thead><tr><th>Projet</th><th>Date</th><th>Type</th><th>Avancement</th></tr></thead><tbody>${list.map(p=>{let ts=projectTasks(p.id),done=ts.filter(t=>["Terminé","Validé CAB"].includes(t.status)).length;return `<tr class="click" data-project="${p.id}"><td><b>${esc(p.name)}</b></td><td>${fmtDate(p.event_date)}</td><td>${esc(p.type)}</td><td>${done}/${ts.length}</td></tr>`}).join("")||'<tr><td colspan="4" class="muted">Aucun projet.</td></tr>'}</tbody></table>`
-}
+function projectTable(list){return `<table><thead><tr><th>Projet</th><th>Date</th><th>Type</th><th>Fichiers</th><th>Avancement</th></tr></thead><tbody>${list.map(p=>{let ts=projectTasks(p.id),d=ts.filter(t=>["Terminé","Validé CAB"].includes(t.status)).length;return `<tr class="click" data-project="${p.id}"><td><b>${esc(p.name)}</b></td><td>${fmtDate(p.event_date)}</td><td>${esc(p.type)}</td><td>${projectFiles(p.id).length}</td><td>${d}/${ts.length}</td></tr>`}).join("")||'<tr><td colspan="5" class="muted">Aucun projet.</td></tr>'}</tbody></table>`}
 function bindProjectRows(){document.querySelectorAll("[data-project]").forEach(r=>r.onclick=()=>{currentProject=r.dataset.project;current="project";render()})}
 function projectsView(filterPole=null){
  $("#title").textContent=filterPole||"Tous les projets";$("#subtitle").textContent=filterPole?"Projets comportant des actions de ce pôle.":"Tous les projets de communication.";
- let list=filterPole?projects.filter(p=>projectTasks(p.id).some(t=>t.pole===filterPole)):projects;
- $("#view").innerHTML=`<section class="card"><div class="cardhead"><div class="filters"><input id="projSearch" placeholder="Rechercher un projet"><select id="typeFilter"><option value="">Tous les types</option>${TYPES.map(x=>`<option>${x}</option>`).join("")}</select></div><button class="btn" id="newProject">+ Nouveau projet</button></div><div id="ptable">${projectTable(list)}</div></section>`;
- const redraw=()=>{let q=$("#projSearch").value.toLowerCase(),ty=$("#typeFilter").value;let x=list.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!ty||p.type===ty));$("#ptable").innerHTML=projectTable(x);bindProjectRows()};
- $("#projSearch").oninput=redraw;$("#typeFilter").onchange=redraw;$("#newProject").onclick=()=>projectModal();bindProjectRows();
+ let base=filterPole?projects.filter(p=>projectTasks(p.id).some(t=>t.pole===filterPole)):projects;
+ $("#view").innerHTML=`<section class="card"><div class="cardhead"><div class="filters"><input id="projSearch" placeholder="Rechercher"><select id="typeFilter"><option value="">Tous les types</option>${TYPES.map(x=>`<option>${x}</option>`).join("")}</select></div><button class="btn" id="newProject">+ Nouveau projet</button></div><div id="ptable">${projectTable(base)}</div></section>`;
+ let redraw=()=>{let q=$("#projSearch").value.toLowerCase(),ty=$("#typeFilter").value;$("#ptable").innerHTML=projectTable(base.filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!ty||p.type===ty)));bindProjectRows()};$("#projSearch").oninput=redraw;$("#typeFilter").onchange=redraw;$("#newProject").onclick=()=>projectModal();bindProjectRows();
 }
 function myTasks(){
  $("#title").textContent="Mes tâches";$("#subtitle").textContent="Actions qui vous sont attribuées.";
- let mine=tasks.filter(t=>t.assignee_id===me.id);
- $("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>{let p=projects.find(x=>x.id===t.project_id);return `<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(p?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`}).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
+ let mine=tasks.filter(t=>t.assignee_id===me.id);$("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
+}
+function calendar(){
+ $("#title").textContent="Calendrier";$("#subtitle").textContent="Échéances des projets.";let by={};projects.forEach(p=>{if(p.event_date)(by[p.event_date]??=[]).push(p)});
+ $("#view").innerHTML=`<section class="card"><div class="pad">${Object.keys(by).sort().map(d=>`<div class="item"><b>${fmtDate(d)}</b><div>${by[d].map(p=>`<button class="btn secondary small" data-project="${p.id}">${esc(p.name)}</button>`).join(" ")}</div></div>`).join("")||'<span class="muted">Aucune date renseignée.</span>'}</div></section>`;bindProjectRows();
 }
 function notificationsView(){
- $("#title").textContent="Notifications";$("#subtitle").textContent="Mentions, affectations et validations.";
- $("#view").innerHTML=`<section class="card"><div class="cardhead"><h2>Vos notifications</h2><button class="btn secondary small" id="readAll">Tout marquer comme lu</button></div><div class="pad">${notifications.map(n=>`<div class="item"><div><b>${esc(n.message)}</b><br><span class="muted">${new Date(n.created_at).toLocaleString("fr-FR")}</span></div>${n.read_at?'<span class="pill done">Lu</span>':'<span class="pill cab">Nouveau</span>'}</div>`).join("")||'<span class="muted">Aucune notification.</span>'}</div></section>`;
- $("#readAll").onclick=async()=>{await sb.from("notifications").update({read_at:new Date().toISOString()}).eq("user_id",me.id).is("read_at",null);await refresh()};
+ $("#title").textContent="Notifications";$("#subtitle").textContent="Mentions reçues dans Pilotage Communication.";
+ $("#view").innerHTML=`<section class="card"><div class="cardhead"><h2>Cloche</h2><button class="btn secondary small" id="readAll">Tout marquer comme lu</button></div><div class="pad">${notifications.map(n=>`<div class="item click" data-notif="${n.id}" data-nproject="${n.project_id||""}"><div><b>${n.read_at?"":"● "}${esc(userName(n.actor_id))}</b><br>${esc(n.message)}<br><span class="muted">${new Date(n.created_at).toLocaleString("fr-FR")}</span></div></div>`).join("")||'<span class="muted">Aucune notification.</span>'}</div></section>`;
+ $("#readAll").onclick=async()=>{await sb.from("notifications").update({read_at:new Date().toISOString()}).eq("user_id",me.id).is("read_at",null);refresh()};
+ document.querySelectorAll("[data-notif]").forEach(x=>x.onclick=async()=>{await sb.from("notifications").update({read_at:new Date().toISOString()}).eq("id",x.dataset.notif);if(x.dataset.nproject){currentProject=x.dataset.nproject;current="project";await loadAll();render()}});
 }
 function validations(){
  $("#title").textContent="Validations";$("#subtitle").textContent="Circuit Direction de la communication puis Cabinet.";
- const d=tasks.filter(t=>t.status==="À valider Direction com"), c=tasks.filter(t=>t.status==="En attente validation CAB");
- const block=(title,arr,stage)=>`<section class="card"><div class="cardhead"><h2>${title}</h2></div><div class="pad">${arr.map(t=>{let p=projects.find(x=>x.id===t.project_id);return `<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(p?.name||"")}</span></div><div><button class="btn small" data-approve="${t.id}" data-stage="${stage}">Valider</button> <button class="btn secondary small" data-return="${t.id}">Demander une modification</button></div></div>`}).join("")||'<span class="muted">Rien à valider.</span>'}</div></section>`;
- $("#view").innerHTML=block("Validation Direction com",d,"Direction com")+block("Validation CAB",c,"CAB");
- document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=async()=>{let next=b.dataset.stage==="Direction com"?"Validé Direction com":"Validé CAB";await sb.from("tasks").update({status:next,updated_at:new Date().toISOString()}).eq("id",b.dataset.approve);toast("Validé");});
- document.querySelectorAll("[data-return]").forEach(b=>b.onclick=async()=>{await sb.from("tasks").update({status:"En cours",updated_at:new Date().toISOString()}).eq("id",b.dataset.return);toast("Renvoyé en modification");});
+ const block=(title,arr,stage)=>`<section class="card"><div class="cardhead"><h2>${title}</h2></div><div class="pad">${arr.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")}</span></div><div><button class="btn small" data-approve="${t.id}" data-stage="${stage}">Valider</button> <button class="btn secondary small" data-return="${t.id}">Modification</button></div></div>`).join("")||'<span class="muted">Rien à valider.</span>'}</div></section>`;
+ $("#view").innerHTML=block("Validation Direction com",tasks.filter(t=>t.status==="À valider Direction com"),"Direction com")+block("Validation CAB",tasks.filter(t=>t.status==="En attente validation CAB"),"CAB");
+ document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=async()=>{await sb.from("tasks").update({status:b.dataset.stage==="Direction com"?"Validé Direction com":"Validé CAB"}).eq("id",b.dataset.approve);toast("Validé")});
+ document.querySelectorAll("[data-return]").forEach(b=>b.onclick=async()=>{await sb.from("tasks").update({status:"En cours"}).eq("id",b.dataset.return);toast("Renvoyé en modification")});
 }
 function teamView(){
- $("#title").textContent="Équipe & paramètres";$("#subtitle").textContent="Utilisateurs disponibles pour les affectations et @mentions.";
- $("#view").innerHTML=`<section class="card"><div class="cardhead"><h2>Équipe</h2><button class="btn" id="addMember">+ Ajouter un membre</button></div><table><thead><tr><th>Nom</th><th>E-mail</th><th>Pôle</th><th>Rôle</th><th></th></tr></thead><tbody>${profiles.map(m=>`<tr><td><b>${esc(m.full_name)}</b></td><td>${esc(m.email)}</td><td>${esc(m.pole||"")}</td><td>${esc(m.role||"")}</td><td><button class="btn secondary small" data-edit="${m.id}">Modifier</button></td></tr>`).join("")}</tbody></table></section>`;
- $("#addMember").onclick=()=>memberModal();
- document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>memberModal(profiles.find(x=>x.id===b.dataset.edit)));
+ $("#title").textContent="Utilisateurs";$("#subtitle").textContent="Comptes de connexion et personnes disponibles dans les @mentions.";
+ $("#view").innerHTML=`<section class="card"><div class="cardhead"><h2>Équipe</h2><button class="btn" id="addUser">+ Utilisateur</button></div><table><thead><tr><th>Nom</th><th>Identifiant</th><th>Pôle</th><th>Rôle</th><th>État</th><th></th></tr></thead><tbody>${users.map(u=>`<tr><td><b>${esc(u.display_name)}</b></td><td>@${esc(u.username)}</td><td>${esc(u.pole||"")}</td><td>${esc(u.role)}</td><td>${u.active?"Actif":"Désactivé"}</td><td><button class="btn secondary small" data-pass="${u.id}">Mot de passe</button> <button class="btn secondary small" data-active="${u.id}" data-val="${!u.active}">${u.active?"Désactiver":"Activer"}</button></td></tr>`).join("")}</tbody></table></section>`;
+ $("#addUser").onclick=userModal;document.querySelectorAll("[data-pass]").forEach(b=>b.onclick=async()=>{let p=prompt("Nouveau mot de passe (6 caractères minimum) :");if(!p)return;let r=await sb.rpc("app_reset_password",{p_user:b.dataset.pass,p_password:p});if(r.error)alert(r.error.message);else toast("Mot de passe modifié")});
+ document.querySelectorAll("[data-active]").forEach(b=>b.onclick=async()=>{let r=await sb.rpc("app_set_user_active",{p_user:b.dataset.active,p_active:b.dataset.val==="true"});if(r.error)alert(r.error.message);else refresh()});
 }
-function memberModal(m=null){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>${m?"Modifier":"Ajouter"} un membre</h2><div class="formgrid" style="margin-top:15px">
- <label><span>Nom et prénom</span><input id="mn" value="${esc(m?.full_name||"")}"></label><label><span>E-mail</span><input id="me" type="email" value="${esc(m?.email||"")}"></label>
- <label><span>Pôle</span><select id="mp"><option value="">—</option>${[...POLES,"Direction","Cabinet","Autre"].map(p=>`<option ${m?.pole===p?"selected":""}>${esc(p)}</option>`).join("")}</select></label>
- <label><span>Rôle</span><input id="mr" value="${esc(m?.role||"Membre")}"></label></div><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="mc">Annuler</button> <button class="btn" id="ms">Enregistrer</button></div></div>`;
- $("#mc").onclick=()=>$("#modal").className="hidden";
- $("#ms").onclick=async()=>{let row={full_name:$("#mn").value.trim(),email:$("#me").value.trim().toLowerCase(),pole:$("#mp").value||null,role:$("#mr").value.trim()||"Membre",updated_at:new Date().toISOString()};if(!row.full_name||!row.email)return alert("Nom et e-mail obligatoires.");
- let q=m?sb.from("profiles").update(row).eq("id",m.id):sb.from("profiles").insert(row);let {error}=await q;if(error)return alert(error.message);$("#modal").className="hidden";toast("Membre enregistré")};
+function userModal(){
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Nouvel utilisateur</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom affiché</span><input id="ud"></label><label><span>Identifiant</span><input id="uu" placeholder="prenom"></label><label><span>Mot de passe initial</span><input id="up" type="password"></label><label><span>Pôle</span><select id="upo"><option value="">—</option>${POLES.map(p=>`<option>${p}</option>`).join("")}</select></label><label><span>Rôle</span><select id="ur"><option value="user">Utilisateur</option><option value="admin">Admin</option></select></label></div><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="uc">Annuler</button> <button class="btn" id="us">Créer</button></div></div>`;
+ $("#uc").onclick=closeModal;$("#us").onclick=async()=>{let r=await sb.rpc("app_create_user",{p_username:$("#uu").value,p_display_name:$("#ud").value,p_password:$("#up").value,p_role:$("#ur").value,p_pole:$("#upo").value||null});if(r.error)return alert(r.error.message);closeModal();toast("Utilisateur créé");refresh()};
 }
-function calendar(){
- $("#title").textContent="Calendrier";$("#subtitle").textContent="Échéances des projets.";
- let by={};projects.forEach(p=>{if(p.event_date)(by[p.event_date]??=[]).push(p)});
- let dates=Object.keys(by).sort();
- $("#view").innerHTML=`<section class="card"><div class="pad">${dates.map(d=>`<div class="item"><div><b>${fmtDate(d)}</b></div><div>${by[d].map(p=>`<button class="btn secondary small" data-project="${p.id}">${esc(p.name)}</button>`).join(" ")}</div></div>`).join("")||'<span class="muted">Aucune date renseignée.</span>'}</div></section>`;bindProjectRows();
-}
+function taskEditor(t){return `<div class="task"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(t.deliverable_type||t.pole)}</span></div><select data-owner="${t.id}"><option value="">À attribuer</option>${users.filter(u=>u.active).map(u=>`<option value="${u.id}" ${t.assignee_id===u.id?"selected":""}>${esc(u.display_name)}</option>`).join("")}</select><input type="date" data-due="${t.id}" value="${esc(t.due_date||"")}"><select data-status="${t.id}">${STATUSES.map(s=>`<option ${s===t.status?"selected":""}>${esc(s)}</option>`).join("")}</select><div><button class="btn danger small" data-del="${t.id}">×</button></div></div>`}
 function projectView(){
  let p=projects.find(x=>x.id===currentProject);if(!p){current="projects";return render()}
  $("#title").textContent=p.name;$("#subtitle").textContent=`${fmtDate(p.event_date)} · ${p.type} · Priorité ${p.priority||"Normale"}`;
- let cards=POLES.map(po=>`<section class="card polecard"><div class="cardhead"><h2>${esc(po)}</h2><button class="btn secondary small" data-addtask="${esc(po)}">+ Ajouter une tâche</button></div><div class="pad">${projectTasks(p.id).filter(t=>t.pole===po).map(taskEditor).join("")||'<span class="muted">Aucune tâche.</span>'}</div></section>`).join("");
- $("#view").innerHTML=`<div class="back" id="back">← Retour aux projets</div><div style="text-align:right;margin-bottom:10px"><button class="btn secondary" id="editProject">Modifier le projet</button></div>${cards}
- <section class="card"><div class="cardhead"><h2>Fil d’activité / commentaires</h2></div><div class="pad">
- <textarea id="commentBox" placeholder="Écrire un commentaire. Tapez @ puis le prénom ou le nom d’un membre de l’équipe."></textarea>
- <div id="mentionHelp" class="muted" style="margin:6px 0">${profiles.map(x=>"@"+x.full_name).join(" · ")}</div>
- <button class="btn" id="sendComment">Ajouter</button>
- ${projectComments(p.id).map(c=>`<div class="comment"><b>${esc(profileName(c.author_id))}</b> · ${new Date(c.created_at).toLocaleString("fr-FR")}<br>${esc(c.body)}</div>`).join("")||'<div class="muted" style="margin-top:12px">Aucun commentaire.</div>'}</div></section>`;
+ let poleCards=POLES.map(po=>`<section class="card polecard"><div class="cardhead"><h2>${esc(po)}</h2><button class="btn secondary small" data-addtask="${esc(po)}">+ Ajouter une tâche</button></div><div class="pad">${projectTasks(p.id).filter(t=>t.pole===po).map(taskEditor).join("")||'<span class="muted">Aucune tâche.</span>'}</div></section>`).join("");
+ $("#view").innerHTML=`<div class="back" id="back">← Retour aux projets</div><div style="text-align:right;margin-bottom:10px"><button class="btn secondary" id="editProject">Modifier le projet</button></div>${poleCards}
+ <section class="card"><div class="cardhead"><h2>Fichiers du projet</h2><span class="muted">Photos · PDF · Word</span></div><div class="pad"><div class="filedrop" id="dropzone">Glisse les fichiers ici<br><span class="muted">ou clique pour les sélectionner</span><input id="fileInput" class="hidden" type="file" multiple accept="image/*,.pdf,.doc,.docx"></div><div id="fileList">${renderFiles(p.id)}</div></div></section>
+ <section class="card"><div class="cardhead"><h2>Commentaires & @mentions</h2><span class="muted">Tape @identifiant pour notifier quelqu’un</span></div><div class="pad"><div id="commentsList">${renderComments(p.id)}</div><textarea id="commentBox" placeholder="Ex. @macit peux-tu valider ?"></textarea><div class="muted" style="margin:5px 0 9px">${users.filter(u=>u.active).map(u=>"@"+u.username).join(" · ")}</div><button class="btn" id="sendComment">Commenter</button></div></section>`;
  $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);
  document.querySelectorAll("[data-addtask]").forEach(b=>b.onclick=()=>taskModal(p,b.dataset.addtask));
- document.querySelectorAll("[data-status]").forEach(s=>s.onchange=async()=>{await sb.from("tasks").update({status:s.value,updated_at:new Date().toISOString()}).eq("id",s.dataset.status);toast("Enregistré automatiquement")});
- document.querySelectorAll("[data-owner]").forEach(s=>s.onchange=async()=>{let id=s.value||null;await sb.from("tasks").update({assignee_id:id,updated_at:new Date().toISOString()}).eq("id",s.dataset.owner);if(id)await notify(id,p.id,s.dataset.owner,"assignment",`Une tâche vous a été attribuée : ${tasks.find(t=>t.id===s.dataset.owner)?.title||""}`);toast("Affectation enregistrée")});
- document.querySelectorAll("[data-due]").forEach(s=>s.onchange=async()=>{await sb.from("tasks").update({due_date:s.value||null,updated_at:new Date().toISOString()}).eq("id",s.dataset.due);toast("Échéance enregistrée")});
+ document.querySelectorAll("[data-status]").forEach(s=>s.onchange=()=>sb.from("tasks").update({status:s.value,updated_at:new Date().toISOString()}).eq("id",s.dataset.status));
+ document.querySelectorAll("[data-owner]").forEach(s=>s.onchange=async()=>{await sb.from("tasks").update({assignee_id:s.value||null,updated_at:new Date().toISOString()}).eq("id",s.dataset.owner);toast("Affectation enregistrée")});
+ document.querySelectorAll("[data-due]").forEach(s=>s.onchange=()=>sb.from("tasks").update({due_date:s.value||null,updated_at:new Date().toISOString()}).eq("id",s.dataset.due));
  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=async()=>{if(confirm("Supprimer cette tâche ?"))await sb.from("tasks").delete().eq("id",b.dataset.del)});
- $("#sendComment").onclick=async()=>{let body=$("#commentBox").value.trim();if(!body)return;let {data:c,error}=await sb.from("comments").insert({project_id:p.id,author_id:me.id,body}).select().single();if(error)return alert(error.message);
-   let mentioned=profiles.filter(x=>body.toLowerCase().includes("@"+x.full_name.toLowerCase()));
-   for(const u of mentioned){await sb.from("mentions").insert({comment_id:c.id,mentioned_user_id:u.id});await notify(u.id,p.id,null,"mention",`${me.full_name} vous a mentionné·e dans ${p.name}`)}
-   $("#commentBox").value="";toast(mentioned.length?"Commentaire ajouté et notification envoyée":"Commentaire ajouté");
- };
+ bindFiles(p);bindComments(p);
 }
-function taskEditor(t){return `<div class="task"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(t.deliverable_type||t.pole)}</span></div>
- <select data-owner="${t.id}"><option value="">À attribuer</option>${profiles.map(m=>`<option value="${m.id}" ${t.assignee_id===m.id?"selected":""}>${esc(m.full_name)}</option>`).join("")}</select>
- <input type="date" data-due="${t.id}" value="${esc(t.due_date||"")}"><select data-status="${t.id}">${STATUSES.map(s=>`<option ${s===t.status?"selected":""}>${esc(s)}</option>`).join("")}</select>
- <div><button class="btn danger small" data-del="${t.id}">×</button></div></div>`}
-async function notify(uid,pid,tid,type,message){if(uid===me.id)return;await sb.from("notifications").insert({user_id:uid,project_id:pid,task_id:tid,type,message})}
+function renderFiles(pid){let arr=projectFiles(pid);return arr.map(f=>`<div class="fileitem"><div><b>${f.kind==="photo"?"📷":f.kind==="pdf"?"📕":"📄"} ${esc(f.file_name)}</b><br><span class="muted">Ajouté par ${esc(userName(f.uploaded_by))}</span></div><div><button class="btn secondary small" data-download="${f.id}">Télécharger</button> <button class="btn danger small" data-delfile="${f.id}">Supprimer</button></div></div>`).join("")||'<span class="muted">Aucun fichier pour ce projet.</span>'}
+function bindFiles(p){
+ let dz=$("#dropzone"),inp=$("#fileInput");dz.onclick=()=>inp.click();dz.ondragover=e=>{e.preventDefault();dz.classList.add("drag")};dz.ondragleave=()=>dz.classList.remove("drag");dz.ondrop=e=>{e.preventDefault();dz.classList.remove("drag");uploadFiles(p,[...e.dataTransfer.files])};inp.onchange=()=>uploadFiles(p,[...inp.files]);
+ document.querySelectorAll("[data-download]").forEach(b=>b.onclick=()=>downloadFile(files.find(f=>f.id===b.dataset.download)));
+ document.querySelectorAll("[data-delfile]").forEach(b=>b.onclick=()=>deleteFile(files.find(f=>f.id===b.dataset.delfile),p));
+}
+async function uploadFiles(p,list){
+ for(let f of list){let ext=f.name.split(".").pop().toLowerCase(),kind=f.type.startsWith("image/")?"photo":ext==="pdf"?"pdf":(["doc","docx"].includes(ext)?"word":"");if(!kind){alert("Format non accepté : "+f.name);continue}
+  let path=`${p.id}/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${f.name.replace(/[^a-zA-Z0-9._-]/g,"_")}`;let up=await sb.storage.from("project-files").upload(path,f);if(up.error){alert(up.error.message);continue}
+  let ins=await sb.from("project_files").insert({project_id:p.id,kind,file_name:f.name,storage_path:path,uploaded_by:me.id});if(ins.error){await sb.storage.from("project-files").remove([path]);alert(ins.error.message)}
+ }toast("Fichier(s) ajouté(s)");refresh()
+}
+async function downloadFile(f){let r=await sb.storage.from("project-files").download(f.storage_path);if(r.error)return alert(r.error.message);let u=URL.createObjectURL(r.data),a=document.createElement("a");a.href=u;a.download=f.file_name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
+async function deleteFile(f,p){if(!confirm("Supprimer définitivement ce fichier ?"))return;let r=await sb.storage.from("project-files").remove([f.storage_path]);if(r.error)return alert(r.error.message);await sb.from("project_files").delete().eq("id",f.id);toast("Fichier supprimé");refresh()}
+function renderComments(pid){
+ let all=projectComments(pid),roots=all.filter(c=>!c.parent_id);
+ const one=(c,reply=false)=>`<div class="comment ${reply?"reply":""}"><b>${esc(userName(c.author_id))}</b> <span class="muted">· ${new Date(c.created_at).toLocaleString("fr-FR")}</span><br>${esc(c.body)}<div class="comment-actions"><button class="btn secondary small" data-reply="${c.id}">Répondre</button>${c.author_id===me.id||me.role==="admin"?`<button class="btn danger small" data-delcomment="${c.id}">Supprimer</button>`:""}</div></div>`;
+ return roots.map(c=>one(c)+all.filter(r=>r.parent_id===c.id).map(r=>one(r,true)).join("")).join("")||'<div class="muted" style="margin-bottom:10px">Aucun commentaire.</div>';
+}
+function bindComments(p){
+ $("#sendComment").onclick=()=>postComment(p.id,null,$("#commentBox").value);
+ document.querySelectorAll("[data-reply]").forEach(b=>b.onclick=()=>{let txt=prompt("Votre réponse :");if(txt)postComment(p.id,b.dataset.reply,txt)});
+ document.querySelectorAll("[data-delcomment]").forEach(b=>b.onclick=async()=>{if(confirm("Supprimer ce commentaire et ses réponses ?")){await sb.from("comments").delete().eq("id",b.dataset.delcomment);toast("Commentaire supprimé");refresh()}});
+}
+async function postComment(pid,parent,body){body=(body||"").trim();if(!body)return;let r=await sb.from("comments").insert({project_id:pid,parent_id:parent||null,author_id:me.id,body}).select().single();if(r.error)return alert(r.error.message);
+ let names=[...body.matchAll(/@([A-Za-z0-9._-]+)/g)].map(m=>m[1].toLowerCase());for(let name of new Set(names)){let u=users.find(x=>x.username.toLowerCase()===name);if(u&&u.id!==me.id){await sb.from("mentions").insert({comment_id:r.data.id,mentioned_user_id:u.id});await sb.from("notifications").insert({user_id:u.id,actor_id:me.id,project_id:pid,task_id:null,type:"mention",message:`${me.display_name} vous a mentionné·e : ${body}`})}}
+ toast("Commentaire ajouté");refresh()
+}
 function taskModal(p,pole){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Ajouter une tâche</h2><label class="muted">Tâche / livrable</label><input id="tt" style="width:100%;margin:7px 0 12px"><label class="muted">Échéance</label><input id="td" type="date" value="${p.event_date||""}" style="width:100%;margin:7px 0 12px"><div style="text-align:right"><button class="btn secondary" id="tc">Annuler</button> <button class="btn" id="ts">Ajouter</button></div></div>`;
- $("#tc").onclick=()=>$("#modal").className="hidden";$("#ts").onclick=async()=>{let title=$("#tt").value.trim();if(!title)return;let {error}=await sb.from("tasks").insert({project_id:p.id,pole,title,due_date:$("#td").value||null,status:"À faire",created_by:me.id});if(error)return alert(error.message);$("#modal").className="hidden";toast("Tâche ajoutée")};
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Ajouter une tâche</h2><label class="muted">Tâche / livrable</label><input id="tt" style="width:100%;margin:7px 0 12px"><label class="muted">Échéance</label><input id="td" type="date" value="${p.event_date||""}" style="width:100%;margin:7px 0 12px"><div style="text-align:right"><button class="btn secondary" id="tc">Annuler</button> <button class="btn" id="ts">Ajouter</button></div></div>`;$("#tc").onclick=closeModal;$("#ts").onclick=async()=>{let title=$("#tt").value.trim();if(!title)return;let r=await sb.from("tasks").insert({project_id:p.id,pole,title,due_date:$("#td").value||null,status:"À faire",created_by:me.id});if(r.error)return alert(r.error.message);closeModal();toast("Tâche ajoutée")};
 }
 function projectModal(p=null){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>${p?"Modifier":"Nouveau"} projet</h2><div class="formgrid" style="margin-top:15px">
- <label><span>Nom</span><input id="pn" value="${esc(p?.name||"")}"></label>
- <label><span>Date</span><input id="pd" type="date" value="${esc(p?.event_date||"")}"><small class="muted">Laisser vide = date à confirmer</small></label>
- <label><span>Type</span><select id="pt">${TYPES.map(x=>`<option ${p?.type===x?"selected":""}>${x}</option>`).join("")}</select></label>
- <label><span>Priorité</span><select id="pp"><option ${p?.priority==="Normale"?"selected":""}>Normale</option><option ${p?.priority==="Haute"?"selected":""}>Haute</option></select></label></div>
- <label style="display:block;margin-top:10px"><span class="muted">Description</span><textarea id="px">${esc(p?.description||"")}</textarea></label>
- <div style="text-align:right;margin-top:15px"><button class="btn secondary" id="pc">Annuler</button> <button class="btn" id="ps">Enregistrer</button></div></div>`;
- $("#pc").onclick=()=>$("#modal").className="hidden";$("#ps").onclick=async()=>{let name=$("#pn").value.trim();if(!name)return alert("Le nom du projet est obligatoire.");let row={name,type:$("#pt").value,event_date:$("#pd").value||null,date_tbc:!$("#pd").value,priority:$("#pp").value,description:$("#px").value,updated_at:new Date().toISOString()};let error,newp;
- if(p){({error}=await sb.from("projects").update(row).eq("id",p.id))}else{row.created_by=me.id;let r=await sb.from("projects").insert(row).select().single();error=r.error;newp=r.data;if(newp){let defaults={"Médias":["Post réseaux sociaux","Article site","Mailing ARC"],"Événementiel":["Organisation / déroulé","Logistique"],"Stratégie & contenus":["Visuel / affiche","Éléments de langage"],"Vidéo":["Captation / montage"],"Mission cinéma et partenariat":["Partenaires / suivi"]};let rows=[];for(const po of POLES)for(const title of defaults[po])rows.push({project_id:newp.id,pole:po,title,due_date:newp.event_date,status:"À faire",created_by:me.id});await sb.from("tasks").insert(rows)}}
- if(error)return alert(error.message);$("#modal").className="hidden";toast("Projet enregistré automatiquement")};
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>${p?"Modifier":"Nouveau"} projet</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom</span><input id="pn" value="${esc(p?.name||"")}"></label><label><span>Date</span><input id="pd" type="date" value="${esc(p?.event_date||"")}"><small class="muted">Vide = date à confirmer</small></label><label><span>Type</span><select id="pt">${TYPES.map(x=>`<option ${p?.type===x?"selected":""}>${x}</option>`).join("")}</select></label><label><span>Priorité</span><select id="pp">${["Normale","Haute"].map(x=>`<option ${p?.priority===x?"selected":""}>${x}</option>`).join("")}</select></label></div><label style="display:block;margin-top:10px"><span class="muted">Description</span><textarea id="px">${esc(p?.description||"")}</textarea></label><div style="display:flex;justify-content:space-between;margin-top:15px"><div>${p?'<button class="btn danger" id="pdel">Supprimer le projet</button>':""}</div><div><button class="btn secondary" id="pc">Annuler</button> <button class="btn" id="ps">Enregistrer</button></div></div></div>`;
+ $("#pc").onclick=closeModal;if(p)$("#pdel").onclick=async()=>{if(confirm("Supprimer définitivement ce projet ?")){await sb.from("projects").delete().eq("id",p.id);closeModal();current="projects";refresh()}};
+ $("#ps").onclick=async()=>{let name=$("#pn").value.trim();if(!name)return alert("Le nom est obligatoire.");let row={name,type:$("#pt").value,event_date:$("#pd").value||null,date_tbc:!$("#pd").value,priority:$("#pp").value,description:$("#px").value,updated_at:new Date().toISOString()};let r;
+ if(p)r=await sb.from("projects").update(row).eq("id",p.id);else{row.created_by=me.id;r=await sb.from("projects").insert(row).select().single();if(!r.error){let defaults={"Médias":["Post réseaux sociaux","Article site","Mailing ARC"],"Événementiel":["Organisation / déroulé","Logistique"],"Stratégie & contenus":["Visuel / affiche","Éléments de langage"],"Vidéo":["Captation / montage"],"Mission cinéma et partenariat":["Partenaires / suivi"]},rows=[];for(let po of POLES)for(let title of defaults[po])rows.push({project_id:r.data.id,pole:po,title,due_date:r.data.event_date,status:"À faire",created_by:me.id});await sb.from("tasks").insert(rows)}}
+ if(r.error)return alert(r.error.message);closeModal();toast("Projet enregistré");refresh()};
 }
+function closeModal(){$("#modal").className="hidden"}
 function render(){nav();if(current==="dashboard")dashboard();else if(current==="projects")projectsView();else if(current==="pole")projectsView(poleFilter);else if(current==="my")myTasks();else if(current==="calendar")calendar();else if(current==="validations")validations();else if(current==="team")teamView();else if(current==="notifications")notificationsView();else if(current==="project")projectView()}
-$("#search").oninput=e=>{let q=e.target.value.trim().toLowerCase();if(!q)return;current="projects";projectsView();let i=$("#projSearch");if(i){i.value=q;i.dispatchEvent(new Event("input"))}}
+$("#search").oninput=e=>{let q=e.target.value.trim();if(!q)return;current="projects";projectsView();let i=$("#projSearch");if(i){i.value=q;i.dispatchEvent(new Event("input"))}}
 init();
 </script></body></html>
