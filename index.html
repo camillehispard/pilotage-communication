@@ -97,6 +97,69 @@ main{max-width:1500px}.card,.flow-card,.quick-card{border-color:#e3eaf2}
 .unit-ref{margin:8px 0 10px;padding:9px 10px;border-radius:11px;background:#f5f8fc;display:flex;align-items:center;justify-content:space-between;gap:8px}.unit-ref select{max-width:220px}
 .delete-task{border:0;background:#fff0f0;color:#b42318;border-radius:8px;padding:7px 9px;cursor:pointer;font-weight:800}
 </style>
+
+<style>
+/* V8 — design / UX polish */
+:root{--ink:#14263a;--muted:#6f7f91;--line:#e7edf3;--surface:#fff;--wash:#f5f7fa;--nav:#10243d}
+body{background:#f6f8fb;color:var(--ink)}
+aside{background:var(--nav);box-shadow:none;border-right:1px solid #ffffff0b}
+main{max-width:1540px;padding-top:26px}
+header{margin-bottom:24px}
+header h1{font-size:28px;letter-spacing:-.035em}
+.card,.flow-card,.quick-card{box-shadow:none;border:1px solid var(--line);border-radius:16px}
+.project-hero{border-radius:20px;box-shadow:none;padding:30px 32px;background:linear-gradient(125deg,#10243d 0%,#183c63 72%,#245780 100%)}
+.project-hero h2{font-size:34px;line-height:1.05;max-width:900px}
+.hero-meta{gap:7px}.hero-chip{background:#ffffff12;border-color:#ffffff1d;padding:6px 10px}
+.owner-strip{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;padding:17px 3px;margin:4px 0 10px}
+.flow-title{border:0;margin-top:30px;margin-bottom:10px}.flow-title h2{font-size:21px}
+.flow-grid{gap:12px}
+.flow-card{overflow:visible;background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding-top:4px}
+.flow-card:hover{transform:none;box-shadow:none}
+.flow-head{background:transparent!important;border:0;padding:14px 3px 9px}
+.flow-body{padding:0 3px 16px}
+.flow-name{font-size:16px}.flow-icon{box-shadow:none}
+.subpole{background:#fff;border:1px solid var(--line);border-radius:14px;margin:8px 0 12px}
+.subpole-title{background:#f8fafc;border-bottom:1px solid #edf1f5;padding:10px 12px}
+.unit-ref{background:transparent;border-bottom:1px solid #eef2f6;border-radius:0;margin:0;padding:10px 12px}
+.task-row{border-bottom:1px solid #eef2f6;border-radius:0;padding:11px 12px;background:#fff}
+.task-row:last-child{border-bottom:0}.task-row:hover{background:#fafbfd}
+.task-title{font-size:13px}.task-sub{margin-top:3px}
+.progressbar{height:4px;background:#eaf0f5;margin-top:10px}
+.quick-grid{gap:12px}.quick-card{background:#fff}
+.theme-chip{box-shadow:none;border:1px solid #e4eaf0}
+.btn{border-radius:10px;box-shadow:none}.btn.secondary{background:#fff;border-color:#dfe6ed}
+select,input,textarea{border-color:#dbe4ed;border-radius:9px}
+.timeline-wrap{padding-top:4px}.timeline{background:#fff}
+.timeline-axis{border-bottom:1px solid #ccd8e4}
+.timeline-row{min-height:64px}.timeline-label{font-size:11px;color:#51657a}
+.timeline-card{border:0;border-left:4px solid var(--theme);box-shadow:0 2px 8px #13283e12;border-radius:7px;padding:8px 9px}
+.timeline-card:before{display:none}
+.timeline-legend{margin-top:2px}
+.duty-page-head{box-shadow:none;background:linear-gradient(125deg,#10243d,#214e78)}
+.duty-row{box-shadow:none;border-color:var(--line)}
+.modalbox{border-radius:20px;box-shadow:0 24px 70px #10243d2e}
+@media(min-width:1100px){.flow-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.flow-card[data-pole="Médias"],.flow-card[data-pole="Stratégie & contenus"]{grid-column:span 2}}
+</style>
+
+<style>
+/* V9 calendar: readable planning bands, not a compressed positional timeline */
+.planning-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:8px 0 15px}
+.planning-head h2{margin:0;font-size:20px}.planning-head p{margin:4px 0 0;color:#718096;font-size:12px}
+.plan-board{display:grid;gap:14px}
+.plan-period{background:#fff;border:1px solid #e4eaf0;border-radius:16px;overflow:hidden}
+.plan-period-head{padding:11px 14px;background:#f5f8fb;border-bottom:1px solid #e8edf2;display:flex;justify-content:space-between;align-items:center}
+.plan-period-title{font-size:13px;font-weight:900;text-transform:capitalize}.plan-period-count{font-size:11px;color:#708196}
+.plan-days{display:grid;grid-template-columns:repeat(7,minmax(130px,1fr));overflow-x:auto}
+.plan-day{min-height:118px;padding:9px;border-right:1px solid #edf1f5}.plan-day:last-child{border-right:0}
+.plan-date{font-size:10px;text-transform:uppercase;color:#7c8c9e;font-weight:850;margin-bottom:7px}
+.plan-event{display:block;width:100%;text-align:left;border:0;border-left:4px solid var(--c);background:#f8fafc;border-radius:7px;padding:7px 8px;margin:5px 0;cursor:pointer;color:#20344a}
+.plan-event:hover{background:#f0f5fa}.plan-event b{display:block;font-size:10.5px;line-height:1.25}.plan-event span{display:block;font-size:9px;color:#718096;margin-top:3px}
+.plan-months{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.plan-month{background:#fff;border:1px solid #e4eaf0;border-radius:15px;padding:12px}.plan-month h3{margin:0 0 8px;text-transform:capitalize;font-size:14px}
+.tbc-strip{margin-top:16px;background:#fff;border:1px dashed #cfd9e4;border-radius:15px;padding:13px}.tbc-strip h3{margin:0 0 9px;font-size:13px}
+.tbc-items{display:flex;gap:7px;flex-wrap:wrap}.tbc-item{border:1px solid #e1e8ef;background:#f8fafc;border-radius:999px;padding:6px 9px;font-size:10px;cursor:pointer}
+@media(max-width:900px){.plan-days{grid-template-columns:repeat(7,150px)}}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -207,16 +270,30 @@ function myTasks(){
  let mine=tasks.filter(t=>t.assignee_id===me.id);$("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
 }
 function calendar(){
- $("#title").textContent="Calendrier";$("#subtitle").textContent="Frise des projets et thématiques";
- $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["90","3 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="timelineView"></div>`;
+ $("#title").textContent="Calendrier";$("#subtitle").textContent="Les projets dans le temps · lecture par thématique";
+ $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["90","3 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="planning"></div>`;
+ const col=p=>THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length];
+ const card=p=>`<button class="plan-event" data-project="${p.id}" style="--c:${col(p)}"><b>${esc(p.name)}</b><span>${p.theme?esc(p.theme)+" · ":""}${esc(p.type||"Projet")}</span></button>`;
  const draw=days=>{
-   let now=new Date();now.setHours(0,0,0,0);let end=new Date(now);end.setDate(end.getDate()+days);
-   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=now&&new Date(p.event_date+"T12:00:00")<=end).sort((a,b)=>a.event_date.localeCompare(b.event_date));
-   let groups={};ps.forEach(p=>{let d=new Date(p.event_date+"T12:00:00"),key=days<=21?`Semaine ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`:d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});(groups[key]??=[]).push(p)});
-   let ticks=days<=21?Array.from({length:days+1},(_,i)=>{let d=new Date(now);d.setDate(d.getDate()+i);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}):Array.from({length:Math.min(days,12)},(_,i)=>{let d=new Date(now);d.setDate(d.getDate()+i*(days/Math.min(days,12)));return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})});
+   let today=new Date();today.setHours(0,0,0,0), finish=new Date(today);finish.setDate(finish.getDate()+days-1);
+   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=today&&new Date(p.event_date+"T12:00:00")<=finish);
    let legend=[...new Set(ps.map(p=>p.theme).filter(Boolean))];
-   $("#timelineView").innerHTML=`<div class="timeline-legend">${legend.map(th=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)}</span>`).join("")}</div><section class="card"><div class="timeline-wrap"><div class="timeline"><div class="timeline-axis" style="grid-template-columns:repeat(${ticks.length},1fr)">${ticks.map(t=>`<div class="timeline-tick">${t}</div>`).join("")}</div>${Object.entries(groups).map(([label,arr])=>`<div class="timeline-row"><div class="timeline-label">${esc(label)}</div><div class="timeline-track">${arr.map((p,idx)=>{let d=new Date(p.event_date+"T12:00:00"),pos=Math.max(0,Math.min(96,((d-now)/86400000)/days*100)),col=THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length];return `<button class="timeline-card" data-project="${p.id}" style="left:${pos}%;top:${6+(idx%3)*15}px;--theme:${col}" title="${esc(p.name)}">${esc(p.name)}</button>`}).join("")}</div></div>`).join("")||'<div class="duty-empty">Aucun projet daté sur cette période.</div>'}</div></div></section>`;
-   bindProjectRows();
+   let html=`<div class="planning-head"><div><h2>${days<90?"Planning à venir":"Vue d’ensemble"}</h2><p>${ps.length} projet${ps.length>1?"s":""} sur la période</p></div></div><div class="timeline-legend">${legend.map(th=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)}</span>`).join("")}</div>`;
+   if(days<=21){
+     html+=`<div class="plan-board">`;
+     for(let w=0;w<Math.ceil(days/7);w++){
+       let wd=new Date(today);wd.setDate(wd.getDate()+w*7), we=new Date(wd);we.setDate(we.getDate()+6);
+       html+=`<section class="plan-period"><div class="plan-period-head"><div class="plan-period-title">Semaine du ${wd.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</div><div class="plan-period-count">${ps.filter(p=>{let d=new Date(p.event_date+"T12:00:00");return d>=wd&&d<=we}).length} événement(s)</div></div><div class="plan-days">`;
+       for(let i=0;i<7;i++){let d=new Date(wd);d.setDate(d.getDate()+i);let iso=d.toISOString().slice(0,10), arr=ps.filter(p=>p.event_date===iso);html+=`<div class="plan-day"><div class="plan-date">${d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})}</div>${arr.map(card).join("")}</div>`}
+       html+=`</div></section>`;
+     } html+=`</div>`;
+   } else {
+     let months={};ps.forEach(p=>{let d=new Date(p.event_date+"T12:00:00"),k=d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});(months[k]??=[]).push(p)});
+     html+=`<div class="plan-months">${Object.entries(months).map(([m,arr])=>`<section class="plan-month"><h3>${m} · ${arr.length}</h3>${arr.sort((a,b)=>a.event_date.localeCompare(b.event_date)).map(p=>`<div style="display:grid;grid-template-columns:48px 1fr;gap:5px;align-items:start"><b style="font-size:10px;padding-top:8px">${new Date(p.event_date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</b>${card(p)}</div>`).join("")}</section>`).join("")||'<div class="duty-empty">Aucun événement daté.</div>'}</div>`;
+   }
+   let tbc=projects.filter(p=>p.date_tbc||!p.event_date);
+   html+=`<section class="tbc-strip"><h3>◷ Dates à confirmer · ${tbc.length}</h3><div class="tbc-items">${tbc.map(p=>`<button class="tbc-item" data-project="${p.id}">${esc(p.name)}</button>`).join("")}</div></section>`;
+   $("#planning").innerHTML=html;bindProjectRows();
  };
  draw(7);document.querySelectorAll("[data-range]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".range-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");draw(+b.dataset.range)});
 }
