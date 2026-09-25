@@ -84,6 +84,19 @@ main{max-width:1500px}.card,.flow-card,.quick-card{border-color:#e3eaf2}
 .theme-cloud{display:flex;gap:8px;flex-wrap:wrap}.calendar-event{display:flex;align-items:center;gap:7px;margin:5px 0}
 .duty-tabs{display:flex;gap:8px;margin-bottom:14px}.duty-section{margin-bottom:22px}
 </style>
+
+<style>
+.timeline-wrap{overflow-x:auto;padding:8px 2px 18px}.timeline{min-width:900px;position:relative}
+.timeline-axis{height:48px;display:grid;border-bottom:2px solid #cbd6e3;margin-left:180px}
+.timeline-tick{border-left:1px solid #dbe3ec;padding:5px 8px;font-size:10px;color:#6c7d90;font-weight:800}
+.timeline-row{display:grid;grid-template-columns:180px 1fr;min-height:56px;border-bottom:1px solid #edf1f5}
+.timeline-label{padding:10px 12px;font-size:12px;font-weight:800;position:sticky;left:0;background:#fff;z-index:2}
+.timeline-track{position:relative}.timeline-card{position:absolute;top:8px;min-width:110px;max-width:240px;border-radius:10px;padding:7px 9px;background:#fff;border:1px solid #dfe7f0;box-shadow:0 3px 10px #10233e10;font-size:10px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.timeline-card:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--theme)}
+.timeline-legend{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 17px}
+.unit-ref{margin:8px 0 10px;padding:9px 10px;border-radius:11px;background:#f5f8fc;display:flex;align-items:center;justify-content:space-between;gap:8px}.unit-ref select{max-width:220px}
+.delete-task{border:0;background:#fff0f0;color:#b42318;border-radius:8px;padding:7px 9px;cursor:pointer;font-weight:800}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -194,18 +207,16 @@ function myTasks(){
  let mine=tasks.filter(t=>t.assignee_id===me.id);$("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
 }
 function calendar(){
- $("#title").textContent="Calendrier & charge";$("#subtitle").textContent="Visualiser les événements, la charge et les thématiques dans le temps.";
- $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["30","1 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="workload"></div>`;
+ $("#title").textContent="Calendrier";$("#subtitle").textContent="Frise des projets et thématiques";
+ $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["90","3 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="timelineView"></div>`;
  const draw=days=>{
-   let now=new Date(), end=new Date(now);end.setDate(end.getDate()+days);
-   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=new Date(now.toDateString())&&new Date(p.event_date+"T12:00:00")<=end);
-   let ts=tasks.filter(t=>{let d=t.due_date&&new Date(t.due_date+"T12:00:00");return d&&d>=new Date(now.toDateString())&&d<=end});
-   let poles=POLES.map(po=>[po,ts.filter(t=>t.pole===po).length]), max=Math.max(1,...poles.map(x=>x[1]));
-   let themes={};ps.forEach(p=>themes[p.theme||"Non thématisé"]=(themes[p.theme||"Non thématisé"]||0)+1);
-   $("#workload").innerHTML=`<div class="work-grid"><div class="work-stat"><span class="muted">Événements</span><strong>${ps.length}</strong><span>sur la période</span></div><div class="work-stat"><span class="muted">Tâches / livrables</span><strong>${ts.length}</strong><span>à produire</span></div><div class="work-stat"><span class="muted">Pôle le plus chargé</span><strong style="font-size:16px;margin-top:7px">${esc(poles.sort((a,b)=>b[1]-a[1])[0][0])}</strong><span>${poles.sort((a,b)=>b[1]-a[1])[0][1]} action(s)</span></div></div>
-   <section class="card"><div class="cardhead"><h2>Charge par pôle</h2></div><div class="pad">${poles.map(x=>`<div class="heat-row"><b>${esc(x[0])}</b><div class="heat-track"><div class="heat-fill" style="width:${x[1]/max*100}%"></div></div><b>${x[1]}</b></div>`).join("")}</div></section>
-   <section class="card" style="margin-top:14px"><div class="cardhead"><h2>Thématiques les plus mobilisées</h2></div><div class="pad theme-cloud">${Object.entries(themes).sort((a,b)=>b[1]-a[1]).map(([th,n])=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)} · ${n}</span>`).join("")||'<span class="muted">Aucun événement sur cette période.</span>'}</div></section>
-   <section class="card" style="margin-top:14px"><div class="cardhead"><h2>Événements</h2></div><div class="pad">${ps.sort((a,b)=>a.event_date.localeCompare(b.event_date)).map(p=>`<div class="calendar-event"><b style="min-width:95px">${fmtDate(p.event_date)}</b>${p.theme?`<i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length]}"></i>`:""}<button class="btn secondary small" data-project="${p.id}">${esc(p.name)}</button></div>`).join("")||'<span class="muted">Aucun événement.</span>'}</div></section>`;bindProjectRows();
+   let now=new Date();now.setHours(0,0,0,0);let end=new Date(now);end.setDate(end.getDate()+days);
+   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=now&&new Date(p.event_date+"T12:00:00")<=end).sort((a,b)=>a.event_date.localeCompare(b.event_date));
+   let groups={};ps.forEach(p=>{let d=new Date(p.event_date+"T12:00:00"),key=days<=21?`Semaine ${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`:d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});(groups[key]??=[]).push(p)});
+   let ticks=days<=21?Array.from({length:days+1},(_,i)=>{let d=new Date(now);d.setDate(d.getDate()+i);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}):Array.from({length:Math.min(days,12)},(_,i)=>{let d=new Date(now);d.setDate(d.getDate()+i*(days/Math.min(days,12)));return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short"})});
+   let legend=[...new Set(ps.map(p=>p.theme).filter(Boolean))];
+   $("#timelineView").innerHTML=`<div class="timeline-legend">${legend.map(th=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)}</span>`).join("")}</div><section class="card"><div class="timeline-wrap"><div class="timeline"><div class="timeline-axis" style="grid-template-columns:repeat(${ticks.length},1fr)">${ticks.map(t=>`<div class="timeline-tick">${t}</div>`).join("")}</div>${Object.entries(groups).map(([label,arr])=>`<div class="timeline-row"><div class="timeline-label">${esc(label)}</div><div class="timeline-track">${arr.map((p,idx)=>{let d=new Date(p.event_date+"T12:00:00"),pos=Math.max(0,Math.min(96,((d-now)/86400000)/days*100)),col=THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length];return `<button class="timeline-card" data-project="${p.id}" style="left:${pos}%;top:${6+(idx%3)*15}px;--theme:${col}" title="${esc(p.name)}">${esc(p.name)}</button>`}).join("")}</div></div>`).join("")||'<div class="duty-empty">Aucun projet daté sur cette période.</div>'}</div></div></section>`;
+   bindProjectRows();
  };
  draw(7);document.querySelectorAll("[data-range]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".range-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");draw(+b.dataset.range)});
 }
@@ -241,7 +252,7 @@ function userOptions(pole,selected,allowAll=false){
 function taskProgress(arr){if(!arr.length)return 0;let done=arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length;return Math.round(done/arr.length*100)}
 function compactTask(t){
  let noteCount=comments.filter(c=>c.context_task_id===t.id).length, sts=statusesFor(t);
- return `<div class="task-row"><div><div class="task-title">${esc(t.title)}</div><div class="task-sub">${t.subpole?esc(t.subpole)+" · ":""}${t.due_date?"📅 "+fmtDate(t.due_date):"Sans échéance"}${t.notes?" · 📝 note":""}${noteCount?" · 💬 "+noteCount:""}</div></div><select class="status-select" data-status="${t.id}">${sts.map(x=>`<option ${x===t.status?"selected":""}>${esc(x)}</option>`).join("")}</select><button class="task-open" data-tasknotes="${t.id}">Ouvrir →</button></div>`;
+ return `<div class="task-row"><div><div class="task-title">${esc(t.title)}</div><div class="task-sub">${t.subpole?esc(t.subpole)+" · ":""}${t.due_date?"📅 "+fmtDate(t.due_date):"Sans échéance"}${t.notes?" · 📝 note":""}${noteCount?" · 💬 "+noteCount:""}</div></div><select class="status-select" data-status="${t.id}">${sts.map(x=>`<option ${x===t.status?"selected":""}>${esc(x)}</option>`).join("")}</select><span style="display:flex;gap:5px"><button class="task-open" data-tasknotes="${t.id}">Ouvrir →</button><button class="delete-task" data-deltask="${t.id}" title="Supprimer">×</button></span></div>`;
 }
 function poleCard(p,po,icon,referentField=null){
  let arr=projectTasks(p.id).filter(t=>t.pole===po),pct=taskProgress(arr);
@@ -249,12 +260,12 @@ function poleCard(p,po,icon,referentField=null){
  let body="";
  if(po==="Stratégie & contenus"){
    let graph=arr.filter(t=>(t.subpole||"Graphiste")==="Graphiste"), cp=arr.filter(t=>t.subpole==="Chargé de projet");
-   body=`<div class="subpole"><div class="subpole-title"><span>🎨 Graphiste</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Graphiste">+</button></div>${graph.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
-   <div class="subpole"><div class="subpole-title"><span>◫ Chargé de projet</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Chargé de projet">+</button></div>${cp.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
+   body=`<div class="subpole"><div class="subpole-title"><span>🎨 Studio graphique</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Graphiste">+</button></div><div class="unit-ref"><b>Référent·e</b><select data-prole="strategy_graphic_referent_id">${userOptions("Stratégie & contenus",p.strategy_graphic_referent_id)}</select></div>${graph.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
+   <div class="subpole"><div class="subpole-title"><span>◫ Chargés de communication</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Chargé de projet">+</button></div><div class="unit-ref"><b>Référent·e</b><select data-prole="strategy_com_referent_id">${userOptions("Stratégie & contenus",p.strategy_com_referent_id)}</select></div>${cp.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
  } else if(po==="Médias"){
    let dig=arr.filter(t=>(t.subpole||"Digital")==="Digital"), mag=arr.filter(t=>t.subpole==="Magazine");
-   body=`<div class="subpole"><div class="subpole-title"><span>◎ Digital</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Digital">+</button></div>${dig.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
-   <div class="subpole"><div class="subpole-title"><span>▤ Magazine</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Magazine">+</button></div>${mag.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
+   body=`<div class="subpole"><div class="subpole-title"><span>◎ Unité digital</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Digital">+</button></div><div class="unit-ref"><b>Référent·e</b><select data-prole="media_digital_referent_id">${userOptions("Médias",p.media_digital_referent_id)}</select></div>${dig.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
+   <div class="subpole"><div class="subpole-title"><span>▤ Unité magazine</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Magazine">+</button></div><div class="unit-ref"><b>Référent·e</b><select data-prole="media_mag_referent_id">${userOptions("Médias",p.media_mag_referent_id)}</select></div>${mag.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
  } else body=`${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div style="text-align:right"><button class="btn secondary small" data-addtask="${esc(po)}">+ Ajouter</button></div>`;
  return `<section class="flow-card" data-pole="${esc(po)}"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><span class="pole-count">${arr.filter(t=>t.status==="Terminé").length}/${arr.length}</span></div><div class="flow-body">${ref}${body}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
 }
@@ -296,7 +307,7 @@ function projectView(){
  document.querySelectorAll("[data-status]").forEach(x=>x.onchange=async()=>{await sb.from("tasks").update({status:x.value,updated_at:new Date().toISOString()}).eq("id",x.dataset.status);toast("Statut enregistré");refresh()});
  document.querySelectorAll("[data-prole]").forEach(x=>x.onchange=async()=>{let row={};row[x.dataset.prole]=x.value||null;await sb.from("projects").update(row).eq("id",p.id);toast("Référent·e enregistré·e");refresh()});
  $("#photoNotes").onchange=async()=>{await sb.from("projects").update({photography_notes:$("#photoNotes").value}).eq("id",p.id);toast("Brief photo enregistré")};
- document.querySelectorAll("[data-tasknotes]").forEach(b=>b.onclick=()=>taskNotesModal(p,projectTasks(p.id).find(t=>t.id===b.dataset.tasknotes)));
+ document.querySelectorAll("[data-tasknotes]").forEach(b=>b.onclick=()=>taskNotesModal(p,projectTasks(p.id).find(t=>t.id===b.dataset.tasknotes)));document.querySelectorAll("[data-deltask]").forEach(b=>b.onclick=async()=>{if(!confirm("Supprimer cette tâche / ce livrable ?"))return;let r=await sb.from("tasks").delete().eq("id",b.dataset.deltask);if(r.error)return alert(r.error.message);toast("Tâche supprimée");refresh()});
  bindFiles(p);bindComments(p);
 }
 function renderFiles(pid){let arr=projectFiles(pid);return arr.map(f=>`<div class="fileitem"><div><b>${f.kind==="photo"?"📷":f.kind==="pdf"?"📕":"📄"} ${esc(f.file_name)}</b><br><span class="muted">Ajouté par ${esc(userName(f.uploaded_by))}</span></div><div><button class="btn secondary small" data-download="${f.id}">Télécharger</button> <button class="btn danger small" data-delfile="${f.id}">Supprimer</button></div></div>`).join("")||'<span class="muted">Aucun fichier pour ce projet.</span>'}
