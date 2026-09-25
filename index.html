@@ -160,6 +160,13 @@ select,input,textarea{border-color:#dbe4ed;border-radius:9px}
 .tbc-items{display:flex;gap:7px;flex-wrap:wrap}.tbc-item{border:1px solid #e1e8ef;background:#f8fafc;border-radius:999px;padding:6px 9px;font-size:10px;cursor:pointer}
 @media(max-width:900px){.plan-days{grid-template-columns:repeat(7,150px)}}
 </style>
+
+<style>
+/* V10 — calendrier éditorial lisible */
+.calendar-toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:18px}.calendar-toolbar input{min-width:240px}.calendar-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}.calendar-kpi{background:#fff;border:1px solid var(--line);border-radius:15px;padding:14px}.calendar-kpi strong{display:block;font-size:24px}.calendar-kpi span{font-size:11px;color:var(--muted)}
+.month-stack{display:grid;gap:18px}.month-block{background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}.month-banner{padding:16px 18px;background:linear-gradient(110deg,#10243d,#214e78);color:#fff;display:flex;align-items:center;justify-content:space-between}.month-banner h2{font-size:18px;text-transform:uppercase;letter-spacing:.08em}.month-banner span{font-size:11px;color:#c9d8e8}.event-list{display:grid}.event-row{display:grid;grid-template-columns:82px minmax(0,1fr) 145px 100px;gap:14px;align-items:center;padding:13px 17px;border-bottom:1px solid #eef2f6;cursor:pointer}.event-row:last-child{border-bottom:0}.event-row:hover{background:#fafcff}.event-date{font-weight:900;font-size:17px;line-height:1}.event-date small{display:block;margin-top:5px;font-size:9px;color:#7c8c9e;text-transform:uppercase;letter-spacing:.08em}.event-name{font-size:13px;font-weight:800}.event-meta{font-size:10px;color:#718096;margin-top:4px}.event-type{justify-self:start;border-radius:999px;background:#f1f5f9;padding:6px 9px;font-size:10px;font-weight:800}.event-progress{text-align:right;font-size:11px;color:#64748b}.event-progress b{display:block;color:#20344a;font-size:12px}.past-event{opacity:.58}.today-event{background:#fff9e8}.tbc-board{margin-top:18px;background:#fff;border:1px dashed #c9d5e2;border-radius:18px;padding:16px}.tbc-board h2{font-size:17px;margin-bottom:4px}.tbc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px;margin-top:12px}.tbc-card{border:1px solid #e5ebf1;background:#f8fafc;border-radius:12px;padding:11px;text-align:left;cursor:pointer}.tbc-card b{display:block;font-size:12px}.tbc-card span{font-size:10px;color:#718096}.source-note{font-size:10px;color:#8290a1;margin-top:14px}.conflict-note{display:inline-block;margin-left:6px;background:#fff3cd;color:#805b00;border-radius:999px;padding:3px 7px;font-size:9px;font-weight:800}
+@media(max-width:850px){.calendar-summary{grid-template-columns:1fr 1fr}.event-row{grid-template-columns:62px 1fr}.event-type,.event-progress{grid-column:2}.event-progress{text-align:left}.calendar-toolbar input{min-width:0;width:100%}}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -170,7 +177,7 @@ select,input,textarea{border-color:#dbe4ed;border-radius:9px}
 const CFG={url:"https://jmgipiplloyaddnnxili.supabase.co",key:"sb_publishable_4IrqHY4u4mW48uSR26DHHw_UVtoSozV"};
 const POLES=["Médias","Événementiel","Stratégie & contenus","Vidéo","Mission cinéma et partenariat"];
 const TEAM_POLES=[...POLES,"Photographie"];
-const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Proximité","Déplacement","Commémoration","Autre"];
+const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Proximité","Déplacement","Commémoration","Cérémonie","Culture","Sport","Santé","Éducation","Solidarité","Service public","Aménagement","Agents","Vie locale","Autre"];
 const FULL_STATUSES=["À faire","En cours / en attente d’éléments","À valider Services / Directions","Validé Services / Directions","À valider Dir Com' / CAB","Validé Dirc Com' / CAB","Bloqué","Terminé","Envoi fait en impression"];
 const LIGHT_STATUSES=["À faire","En cours","Terminé"];
 const THEMES=["Éducation","Santé","Culture","Commerces","Proximité","Solidarité","Sport","Enfance","Jeunesse","Égalité","Logement","Sécurité","Végétalisation","Environnement","Vie locale","Institutionnel","Mémoire","Emploi","Mobilités","Autre"];
@@ -272,33 +279,24 @@ function myTasks(){
  let mine=tasks.filter(t=>t.assignee_id===me.id);$("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
 }
 function calendar(){
- $("#title").textContent="Calendrier";$("#subtitle").textContent="Les projets dans le temps · lecture par thématique";
- $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["90","3 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="planning"></div>`;
- const col=p=>THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length];
- const card=p=>`<button class="plan-event" data-project="${p.id}" style="--c:${col(p)}"><b>${esc(p.name)}</b><span>${p.theme?esc(p.theme)+" · ":""}${esc(p.type||"Projet")}</span></button>`;
- const draw=days=>{
-   let today=new Date();today.setHours(0,0,0,0), finish=new Date(today);finish.setDate(finish.getDate()+days-1);
-   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=today&&new Date(p.event_date+"T12:00:00")<=finish);
-   let legend=[...new Set(ps.map(p=>p.theme).filter(Boolean))];
-   let html=`<div class="planning-head"><div><h2>${days<90?"Planning à venir":"Vue d’ensemble"}</h2><p>${ps.length} projet${ps.length>1?"s":""} sur la période</p></div></div><div class="timeline-legend">${legend.map(th=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)}</span>`).join("")}</div>`;
-   if(days<=21){
-     html+=`<div class="plan-board">`;
-     for(let w=0;w<Math.ceil(days/7);w++){
-       let wd=new Date(today);wd.setDate(wd.getDate()+w*7), we=new Date(wd);we.setDate(we.getDate()+6);
-       html+=`<section class="plan-period"><div class="plan-period-head"><div class="plan-period-title">Semaine du ${wd.toLocaleDateString("fr-FR",{day:"numeric",month:"long"})}</div><div class="plan-period-count">${ps.filter(p=>{let d=new Date(p.event_date+"T12:00:00");return d>=wd&&d<=we}).length} événement(s)</div></div><div class="plan-days">`;
-       for(let i=0;i<7;i++){let d=new Date(wd);d.setDate(d.getDate()+i);let iso=d.toISOString().slice(0,10), arr=ps.filter(p=>p.event_date===iso);html+=`<div class="plan-day"><div class="plan-date">${d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric",month:"short"})}</div>${arr.map(card).join("")}</div>`}
-       html+=`</div></section>`;
-     } html+=`</div>`;
-   } else {
-     let months={};ps.forEach(p=>{let d=new Date(p.event_date+"T12:00:00"),k=d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"});(months[k]??=[]).push(p)});
-     html+=`<div class="plan-months">${Object.entries(months).map(([m,arr])=>`<section class="plan-month"><h3>${m} · ${arr.length}</h3>${arr.sort((a,b)=>a.event_date.localeCompare(b.event_date)).map(p=>`<div style="display:grid;grid-template-columns:48px 1fr;gap:5px;align-items:start"><b style="font-size:10px;padding-top:8px">${new Date(p.event_date+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit"})}</b>${card(p)}</div>`).join("")}</section>`).join("")||'<div class="duty-empty">Aucun événement daté.</div>'}</div>`;
-   }
-   let tbc=projects.filter(p=>p.date_tbc||!p.event_date);
-   html+=`<section class="tbc-strip"><h3>◷ Dates à confirmer · ${tbc.length}</h3><div class="tbc-items">${tbc.map(p=>`<button class="tbc-item" data-project="${p.id}">${esc(p.name)}</button>`).join("")}</div></section>`;
-   $("#planning").innerHTML=html;bindProjectRows();
- };
- draw(7);document.querySelectorAll("[data-range]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".range-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");draw(+b.dataset.range)});
+  $("#title").textContent="Calendrier des événements";$("#subtitle").textContent="Lecture mensuelle · événements, projets et dates à confirmer";
+  const monthNames=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  const eventProgress=p=>{let ts=projectTasks(p.id),done=ts.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length;return `${done}/${ts.length}`};
+  const months=[...new Set(projects.filter(p=>p.event_date).map(p=>p.event_date.slice(0,7)))].sort();
+  $("#view").innerHTML=`<div class="calendar-toolbar"><input id="calSearch" placeholder="Rechercher un événement…"><select id="calMonth"><option value="">Tous les mois</option>${months.map(m=>{let d=new Date(m+"-01T12:00:00");return `<option value="${m}">${d.toLocaleDateString("fr-FR",{month:"long",year:"numeric"})}</option>`}).join("")}</select><select id="calType"><option value="">Tous les types</option>${TYPES.map(x=>`<option>${x}</option>`).join("")}</select><label class="pill"><input id="calFuture" type="checkbox"> À venir uniquement</label></div><div id="calendarBody"></div>`;
+  const draw=()=>{
+    let q=$("#calSearch").value.trim().toLowerCase(),mf=$("#calMonth").value,tf=$("#calType").value,future=$("#calFuture").checked;let today=new Date();today.setHours(0,0,0,0);
+    let dated=projects.filter(p=>p.event_date&&(!q||(`${p.name} ${p.type||""} ${p.theme||""}`).toLowerCase().includes(q))&&(!mf||p.event_date.startsWith(mf))&&(!tf||p.type===tf)&&(!future||new Date(p.event_date+"T12:00:00")>=today)).sort((a,b)=>a.event_date.localeCompare(b.event_date)||a.name.localeCompare(b.name));
+    let tbc=projects.filter(p=>(p.date_tbc||!p.event_date)&&(!q||(`${p.name} ${p.type||""} ${p.theme||""}`).toLowerCase().includes(q))&&(!tf||p.type===tf));
+    let grouped={};dated.forEach(p=>(grouped[p.event_date.slice(0,7)]??=[]).push(p));
+    let html=`<div class="calendar-summary"><div class="calendar-kpi"><strong>${dated.length}</strong><span>événements datés affichés</span></div><div class="calendar-kpi"><strong>${Object.keys(grouped).length}</strong><span>mois concernés</span></div><div class="calendar-kpi"><strong>${tbc.length}</strong><span>dates à confirmer</span></div><div class="calendar-kpi"><strong>${dated.filter(p=>new Date(p.event_date+"T12:00:00")>=today).length}</strong><span>événements à venir</span></div></div><div class="month-stack">`;
+    for(let [key,arr] of Object.entries(grouped)){let d=new Date(key+"-01T12:00:00");html+=`<section class="month-block"><div class="month-banner"><h2>${monthNames[d.getMonth()]} ${d.getFullYear()}</h2><span>${arr.length} événement${arr.length>1?"s":""}</span></div><div class="event-list">${arr.map(p=>{let ed=new Date(p.event_date+"T12:00:00"),past=ed<today,isToday=ed.toDateString()===today.toDateString();return `<div class="event-row ${past?"past-event":""} ${isToday?"today-event":""}" data-project="${p.id}"><div class="event-date">${String(ed.getDate()).padStart(2,"0")}<small>${ed.toLocaleDateString("fr-FR",{weekday:"short"})}</small></div><div><div class="event-name">${esc(p.name)}</div><div class="event-meta">${p.theme?esc(p.theme)+" · ":""}${fmtDate(p.event_date)}</div></div><span class="event-type">${esc(p.type||"Autre")}</span><div class="event-progress"><b>${eventProgress(p)}</b>tâches terminées</div></div>`}).join("")}</div></section>`}
+    html+=`</div><section class="tbc-board"><h2>📌 À caler</h2><div class="muted">Événements sans date définitive ou signalés à confirmer.</div><div class="tbc-grid">${tbc.map(p=>`<button class="tbc-card" data-project="${p.id}"><b>${esc(p.name)}</b><span>${esc(p.type||"Autre")}${p.theme?" · "+esc(p.theme):""}</span></button>`).join("")||'<div class="muted">Aucune date à confirmer.</div>'}</div></section>`;
+    $("#calendarBody").innerHTML=html;bindProjectRows();
+  };
+  ["calSearch","calMonth","calType","calFuture"].forEach(id=>$("#"+id).oninput=draw);draw();
 }
+
 function notificationsView(){
  $("#title").textContent="Notifications";$("#subtitle").textContent="Mentions reçues dans Pilotage Communication.";
  $("#view").innerHTML=`<section class="card"><div class="cardhead"><h2>Cloche</h2><button class="btn secondary small" id="readAll">Tout marquer comme lu</button></div><div class="pad">${notifications.map(n=>`<div class="item click" data-notif="${n.id}" data-nproject="${n.project_id||""}"><div><b>${n.read_at?"":"● "}${esc(userName(n.actor_id))}</b><br>${esc(n.message)}<br><span class="muted">${new Date(n.created_at).toLocaleString("fr-FR")}</span></div></div>`).join("")||'<span class="muted">Aucune notification.</span>'}</div></section>`;
