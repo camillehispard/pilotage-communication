@@ -71,6 +71,19 @@ main{max-width:1500px}.card,.flow-card,.quick-card{border-color:#e3eaf2}
 .duty-empty{background:#fff;border:1px dashed #ccd7e4;border-radius:17px;padding:28px;text-align:center;color:#718096}
 @media(max-width:760px){.duty-row{grid-template-columns:1fr}.project-hero h2{font-size:25px}}
 </style>
+
+<style>
+.subpole{margin:10px 0 14px;border:1px solid #e8edf4;border-radius:14px;background:#fbfcfe;overflow:hidden}
+.subpole-title{padding:9px 11px;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;color:#53657a;background:#f3f6fa;display:flex;justify-content:space-between}
+.theme-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:800;background:#fff;color:#21364e}
+.theme-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.work-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}.range-btn.active{background:#102b4b;color:white;border-color:#102b4b}
+.work-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:18px}
+.work-stat{background:#fff;border:1px solid #e2e9f1;border-radius:15px;padding:14px}.work-stat strong{font-size:25px;display:block}
+.heat-row{display:grid;grid-template-columns:150px 1fr 55px;gap:10px;align-items:center;margin:9px 0}.heat-track{height:12px;background:#edf2f7;border-radius:999px;overflow:hidden}.heat-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#6ea8ff,#173a67)}
+.theme-cloud{display:flex;gap:8px;flex-wrap:wrap}.calendar-event{display:flex;align-items:center;gap:7px;margin:5px 0}
+.duty-tabs{display:flex;gap:8px;margin-bottom:14px}.duty-section{margin-bottom:22px}
+</style>
 </head><body><div class="app"><aside><div class="logo">Saint-Ouen<br>sur-Seine</div><div class="sub">Direction de la communication<br>Pilotage des projets</div><nav id="nav"></nav></aside><main>
 <header><div><h1 id="title">Bonjour Camille 👋</h1><div class="muted" id="subtitle">Pilotage des projets et actions de communication.</div></div><div class="topright"><input class="search" id="search" placeholder="Rechercher…"><div class="user">CH &nbsp; Camille Hispard</div></div></header><div id="view"></div></main></div>
 <div id="modal" class="hidden"></div><div id="toast" class="toast hidden"></div>
@@ -82,8 +95,15 @@ const CFG={url:"https://jmgipiplloyaddnnxili.supabase.co",key:"sb_publishable_4I
 const POLES=["Médias","Événementiel","Stratégie & contenus","Vidéo","Mission cinéma et partenariat"];
 const TEAM_POLES=[...POLES,"Photographie"];
 const TYPES=["Inauguration","Événementiel","Institutionnel","Réunion publique","Rencontre maire","Proximité","Déplacement","Commémoration","Autre"];
-const STATUSES=["À faire","En cours","À valider","À valider Direction com","Validé Direction com","En attente validation CAB","Validé CAB","En attente d’éléments","Bloqué","Programmé","Terminé"];
-let sb=null,token=localStorage.getItem("pilotage_token")||"",me=null,users=[],projects=[],tasks=[],comments=[],notifications=[],files=[];
+const FULL_STATUSES=["À faire","En cours / en attente d’éléments","À valider Services / Directions","Validé Services / Directions","À valider Dir Com' / CAB","Validé Dirc Com' / CAB","Bloqué","Terminé","Envoi fait en impression"];
+const LIGHT_STATUSES=["À faire","En cours","Terminé"];
+const THEMES=["Éducation","Santé","Culture","Commerces","Proximité","Solidarité","Sport","Enfance","Jeunesse","Égalité","Logement","Sécurité","Végétalisation","Environnement","Vie locale","Institutionnel","Mémoire","Emploi","Mobilités","Autre"];
+const THEME_COLORS=["#1769e0","#7c3aed","#db2777","#ea580c","#0891b2","#059669","#dc2626","#ca8a04","#4f46e5","#9333ea","#64748b","#b91c1c","#16a34a","#0d9488","#2563eb","#334155","#78716c","#c2410c","#0284c7","#6b7280"];
+const STRATEGY_DELIVERABLES=["Affiche","Flyer","Invitation","Visuel RS","Autre"];
+const MEDIA_DELIVERABLES=["Visuel RS","Emailing","Article SO Mag","Post RS","Story","Article site","Mailing ARC","Autre"];
+const lightTask=t=>["Visuel RS","Emailing","Article SO Mag"].includes(t.title)||["Visuel RS","Emailing","Article SO Mag"].includes(t.deliverable_type);
+const statusesFor=t=>lightTask(t)?LIGHT_STATUSES:FULL_STATUSES;
+let sb=null,token=localStorage.getItem("pilotage_token")||"",me=null,users=[],projects=[],tasks=[],comments=[],notifications=[],files=[],duties=[];
 let current="dashboard",currentProject=null,poleFilter=null;
 const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const fmtDate=s=>s?new Date(s+"T12:00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short",year:"numeric"}):"Date à confirmer";
@@ -120,15 +140,16 @@ function loginView(first=false,msg=""){
 async function enter(){ $("#search").classList.remove("hidden"); await loadAll();subscribe();render() }
 async function logout(){try{await sb.rpc("app_logout",{p_token:token})}catch(e){}localStorage.removeItem("pilotage_token");localStorage.removeItem("pilotage_user");location.reload()}
 async function loadAll(){
- let [u,p,t,c,n,f]=await Promise.all([
+ let [u,p,t,c,n,f,d]=await Promise.all([
   sb.from("app_users").select("id,username,display_name,role,pole,active").order("display_name"),
   sb.from("projects").select("*").order("event_date",{ascending:true,nullsFirst:false}),
   sb.from("tasks").select("*").order("created_at"),
   sb.from("comments").select("*").order("created_at"),
   sb.from("notifications").select("*").eq("user_id",me.id).order("created_at",{ascending:false}),
-  sb.from("project_files").select("*").order("created_at",{ascending:false})
+  sb.from("project_files").select("*").order("created_at",{ascending:false}),
+  sb.from("duties").select("*").order("duty_date")
  ]);
- users=u.data||[];projects=p.data||[];tasks=t.data||[];comments=c.data||[];notifications=n.data||[];files=f.data||[];
+ users=u.data||[];projects=p.data||[];tasks=t.data||[];comments=c.data||[];notifications=n.data||[];files=f.data||[];duties=d.data||[];
 }
 let rtimer;
 function refresh(){clearTimeout(rtimer);rtimer=setTimeout(async()=>{await loadAll();render()},200)}
@@ -139,13 +160,14 @@ function subscribe(){
  .on("postgres_changes",{event:"*",schema:"public",table:"comments"},refresh)
  .on("postgres_changes",{event:"*",schema:"public",table:"project_files"},refresh)
  .on("postgres_changes",{event:"*",schema:"public",table:"app_users"},refresh)
+ .on("postgres_changes",{event:"*",schema:"public",table:"duties"},refresh)
  .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${me.id}`},()=>{beep();refresh()})
  .subscribe();
 }
 function beep(){try{let a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);g.gain.value=.05;o.frequency.value=880;o.start();o.stop(a.currentTime+.12)}catch(e){}}
 function nav(){
  let unread=notifications.filter(n=>!n.read_at).length;
- $("#nav").innerHTML=`<button data-view="dashboard">▦ &nbsp; Tableau de bord</button><button data-view="projects">☷ &nbsp; Tous les projets</button><button data-view="calendar">□ &nbsp; Calendrier</button><button data-view="my">✓ &nbsp; Mes tâches</button><button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button><div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}<div class="group">Organisation</div><button data-view="duties">☾ &nbsp; Astreintes week-end</button><div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button>${me.role==="admin"?'<button data-view="team">⚙ &nbsp; Utilisateurs</button>':""}<button id="logout">↪ &nbsp; Déconnexion</button>`;
+ $("#nav").innerHTML=`<button data-view="dashboard">▦ &nbsp; Tableau de bord</button><button data-view="projects">☷ &nbsp; Tous les projets</button><button data-view="calendar">□ &nbsp; Calendrier</button><button data-view="my">✓ &nbsp; Mes tâches</button><button data-view="notifications">🔔 &nbsp; Notifications ${unread?`<span class="pill cab">${unread}</span>`:""}</button><div class="group">Pôles</div>${POLES.map(p=>`<button data-pole="${esc(p)}">${esc(p)}</button>`).join("")}<div class="group">Organisation</div><button data-view="duties">☾ &nbsp; Astreintes</button><div class="group">Pilotage</div><button data-view="validations">✓ &nbsp; Validations</button>${me.role==="admin"?'<button data-view="team">⚙ &nbsp; Utilisateurs</button>':""}<button id="logout">↪ &nbsp; Déconnexion</button>`;
  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{current=b.dataset.view;currentProject=null;render()});
  document.querySelectorAll("[data-pole]").forEach(b=>b.onclick=()=>{current="pole";poleFilter=b.dataset.pole;render()});
  $("#logout").onclick=logout;$(".user").textContent=`${me.display_name} · @${me.username}`;
@@ -172,8 +194,20 @@ function myTasks(){
  let mine=tasks.filter(t=>t.assignee_id===me.id);$("#view").innerHTML=`<section class="card"><div class="pad">${mine.map(t=>`<div class="item"><div><b>${esc(t.title)}</b><br><span class="muted">${esc(projects.find(p=>p.id===t.project_id)?.name||"")} · ${esc(t.pole)}</span></div><span class="pill">${esc(t.status)}</span></div>`).join("")||'<span class="muted">Aucune tâche attribuée.</span>'}</div></section>`;
 }
 function calendar(){
- $("#title").textContent="Calendrier";$("#subtitle").textContent="Échéances des projets.";let by={};projects.forEach(p=>{if(p.event_date)(by[p.event_date]??=[]).push(p)});
- $("#view").innerHTML=`<section class="card"><div class="pad">${Object.keys(by).sort().map(d=>`<div class="item"><b>${fmtDate(d)}</b><div>${by[d].map(p=>`<button class="btn secondary small" data-project="${p.id}">${esc(p.name)}</button>`).join(" ")}</div></div>`).join("")||'<span class="muted">Aucune date renseignée.</span>'}</div></section>`;bindProjectRows();
+ $("#title").textContent="Calendrier & charge";$("#subtitle").textContent="Visualiser les événements, la charge et les thématiques dans le temps.";
+ $("#view").innerHTML=`<div class="work-toolbar">${[["7","1 semaine"],["14","2 semaines"],["21","3 semaines"],["30","1 mois"],["365","1 an"]].map((x,i)=>`<button class="btn secondary range-btn ${i===0?"active":""}" data-range="${x[0]}">${x[1]}</button>`).join("")}</div><div id="workload"></div>`;
+ const draw=days=>{
+   let now=new Date(), end=new Date(now);end.setDate(end.getDate()+days);
+   let ps=projects.filter(p=>p.event_date&&new Date(p.event_date+"T12:00:00")>=new Date(now.toDateString())&&new Date(p.event_date+"T12:00:00")<=end);
+   let ts=tasks.filter(t=>{let d=t.due_date&&new Date(t.due_date+"T12:00:00");return d&&d>=new Date(now.toDateString())&&d<=end});
+   let poles=POLES.map(po=>[po,ts.filter(t=>t.pole===po).length]), max=Math.max(1,...poles.map(x=>x[1]));
+   let themes={};ps.forEach(p=>themes[p.theme||"Non thématisé"]=(themes[p.theme||"Non thématisé"]||0)+1);
+   $("#workload").innerHTML=`<div class="work-grid"><div class="work-stat"><span class="muted">Événements</span><strong>${ps.length}</strong><span>sur la période</span></div><div class="work-stat"><span class="muted">Tâches / livrables</span><strong>${ts.length}</strong><span>à produire</span></div><div class="work-stat"><span class="muted">Pôle le plus chargé</span><strong style="font-size:16px;margin-top:7px">${esc(poles.sort((a,b)=>b[1]-a[1])[0][0])}</strong><span>${poles.sort((a,b)=>b[1]-a[1])[0][1]} action(s)</span></div></div>
+   <section class="card"><div class="cardhead"><h2>Charge par pôle</h2></div><div class="pad">${poles.map(x=>`<div class="heat-row"><b>${esc(x[0])}</b><div class="heat-track"><div class="heat-fill" style="width:${x[1]/max*100}%"></div></div><b>${x[1]}</b></div>`).join("")}</div></section>
+   <section class="card" style="margin-top:14px"><div class="cardhead"><h2>Thématiques les plus mobilisées</h2></div><div class="pad theme-cloud">${Object.entries(themes).sort((a,b)=>b[1]-a[1]).map(([th,n])=>`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(th))%THEME_COLORS.length]}"></i>${esc(th)} · ${n}</span>`).join("")||'<span class="muted">Aucun événement sur cette période.</span>'}</div></section>
+   <section class="card" style="margin-top:14px"><div class="cardhead"><h2>Événements</h2></div><div class="pad">${ps.sort((a,b)=>a.event_date.localeCompare(b.event_date)).map(p=>`<div class="calendar-event"><b style="min-width:95px">${fmtDate(p.event_date)}</b>${p.theme?`<i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length]}"></i>`:""}<button class="btn secondary small" data-project="${p.id}">${esc(p.name)}</button></div>`).join("")||'<span class="muted">Aucun événement.</span>'}</div></section>`;bindProjectRows();
+ };
+ draw(7);document.querySelectorAll("[data-range]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".range-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");draw(+b.dataset.range)});
 }
 function notificationsView(){
  $("#title").textContent="Notifications";$("#subtitle").textContent="Mentions reçues dans Pilotage Communication.";
@@ -206,13 +240,23 @@ function userOptions(pole,selected,allowAll=false){
 }
 function taskProgress(arr){if(!arr.length)return 0;let done=arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length;return Math.round(done/arr.length*100)}
 function compactTask(t){
- let noteCount=comments.filter(c=>c.context_task_id===t.id).length;
- return `<div class="task-row"><div><div class="task-title">${esc(t.title)}</div><div class="task-sub">${t.due_date?"📅 "+fmtDate(t.due_date):"Sans échéance"}${t.notes?" · 📝 note":""}${noteCount?" · 💬 "+noteCount:""}</div></div><select class="status-select" data-status="${t.id}">${STATUSES.map(x=>`<option ${x===t.status?"selected":""}>${esc(x)}</option>`).join("")}</select><button class="task-open" data-tasknotes="${t.id}">Ouvrir →</button></div>`;
+ let noteCount=comments.filter(c=>c.context_task_id===t.id).length, sts=statusesFor(t);
+ return `<div class="task-row"><div><div class="task-title">${esc(t.title)}</div><div class="task-sub">${t.subpole?esc(t.subpole)+" · ":""}${t.due_date?"📅 "+fmtDate(t.due_date):"Sans échéance"}${t.notes?" · 📝 note":""}${noteCount?" · 💬 "+noteCount:""}</div></div><select class="status-select" data-status="${t.id}">${sts.map(x=>`<option ${x===t.status?"selected":""}>${esc(x)}</option>`).join("")}</select><button class="task-open" data-tasknotes="${t.id}">Ouvrir →</button></div>`;
 }
 function poleCard(p,po,icon,referentField=null){
  let arr=projectTasks(p.id).filter(t=>t.pole===po),pct=taskProgress(arr);
  let ref=referentField?`<div class="referent-line"><span><b>Référent·e</b><br><span class="muted">${esc(po)}</span></span><select data-prole="${referentField}">${userOptions(po,p[referentField])}</select></div>`:"";
- return `<section class="flow-card" data-pole="${esc(po)}"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><div><span class="pole-count">${arr.filter(t=>["Terminé","Validé CAB","Programmé"].includes(t.status)).length}/${arr.length}</span> <button class="btn secondary small" data-addtask="${esc(po)}">+</button></div></div><div class="flow-body">${ref}${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
+ let body="";
+ if(po==="Stratégie & contenus"){
+   let graph=arr.filter(t=>(t.subpole||"Graphiste")==="Graphiste"), cp=arr.filter(t=>t.subpole==="Chargé de projet");
+   body=`<div class="subpole"><div class="subpole-title"><span>🎨 Graphiste</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Graphiste">+</button></div>${graph.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
+   <div class="subpole"><div class="subpole-title"><span>◫ Chargé de projet</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Chargé de projet">+</button></div>${cp.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
+ } else if(po==="Médias"){
+   let dig=arr.filter(t=>(t.subpole||"Digital")==="Digital"), mag=arr.filter(t=>t.subpole==="Magazine");
+   body=`<div class="subpole"><div class="subpole-title"><span>◎ Digital</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Digital">+</button></div>${dig.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucun livrable.</div>'}</div>
+   <div class="subpole"><div class="subpole-title"><span>▤ Magazine</span><button class="btn secondary small" data-addtask="${esc(po)}" data-subpole="Magazine">+</button></div>${mag.map(compactTask).join("")||'<div class="empty-action" style="padding:10px">Aucune tâche.</div>'}</div>`;
+ } else body=`${arr.map(compactTask).join("")||'<div class="empty-action">Aucune demande pour ce pôle.</div>'}<div style="text-align:right"><button class="btn secondary small" data-addtask="${esc(po)}">+ Ajouter</button></div>`;
+ return `<section class="flow-card" data-pole="${esc(po)}"><div class="flow-head"><div class="flow-name"><span class="flow-icon">${icon}</span>${esc(po)}</div><span class="pole-count">${arr.filter(t=>t.status==="Terminé").length}/${arr.length}</span></div><div class="flow-body">${ref}${body}<div class="progressbar"><i style="width:${pct}%"></i></div></div></section>`;
 }
 function projectView(){
  let p=projects.find(x=>x.id===currentProject);if(!p){current="projects";return render()}
@@ -227,7 +271,7 @@ function projectView(){
  $("#view").innerHTML=`
  <div class="back" id="back">← Tous les projets</div>
  <div class="project-tools"><button class="btn secondary" id="editProject">Modifier les infos</button></div>
- <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip ${p.priority==="Haute"?"priority-high":"priority-normal"}">⚑ Priorité : ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span></div>
+ <section class="project-hero"><div class="eyebrow">${esc(p.type)} · Projet de communication</div><h2>${esc(p.name)}</h2><div class="hero-meta"><span class="hero-chip">📅 ${fmtDate(p.event_date)}</span><span class="hero-chip ${p.priority==="Haute"?"priority-high":"priority-normal"}">⚑ Priorité : ${esc(p.priority||"Normale")}</span><span class="hero-chip">📎 ${projectFiles(p.id).length} fichier(s)</span>${p.theme?`<span class="theme-chip"><i class="theme-dot" style="background:${THEME_COLORS[Math.max(0,THEMES.indexOf(p.theme))%THEME_COLORS.length]}"></i>${esc(p.theme)}</span>`:""}</div>
  <div class="owner-strip"><div class="owner-icon">◎</div><div><div class="owner-title">Porteur du projet</div><div class="owner-value">${p.project_owner_user_id?esc(userName(p.project_owner_user_id)):(p.project_owner_name?esc(p.project_owner_name)+(p.project_owner_service?` · ${esc(p.project_owner_service)}`:""):"À renseigner")}</div></div><button class="owner-edit" id="editOwner">Modifier</button></div></section>
  <div class="flow-title"><div><h2 class="workflow-label">Demandes aux pôles</h2><div class="muted">L'essentiel du projet, pôle par pôle. Clique sur une demande pour ses notes, échanges et @mentions.</div></div></div>
  <div class="flow-grid">
@@ -248,7 +292,7 @@ function projectView(){
  $("#back").onclick=()=>{current="projects";render()};$("#editProject").onclick=()=>projectModal(p);$("#editOwner").onclick=()=>projectOwnerModal(p);
  $("#jumpFiles").onclick=()=>{$("#filesFold").open=true;$("#filesFold").scrollIntoView({behavior:"smooth"})};
  $("#jumpComments").onclick=()=>{$("#commentsFold").open=true;$("#commentsFold").scrollIntoView({behavior:"smooth"})};
- document.querySelectorAll("[data-addtask]").forEach(b=>b.onclick=()=>taskModal(p,b.dataset.addtask));
+ document.querySelectorAll("[data-addtask]").forEach(b=>b.onclick=()=>taskModal(p,b.dataset.addtask,b.dataset.subpole||null));
  document.querySelectorAll("[data-status]").forEach(x=>x.onchange=async()=>{await sb.from("tasks").update({status:x.value,updated_at:new Date().toISOString()}).eq("id",x.dataset.status);toast("Statut enregistré");refresh()});
  document.querySelectorAll("[data-prole]").forEach(x=>x.onchange=async()=>{let row={};row[x.dataset.prole]=x.value||null;await sb.from("projects").update(row).eq("id",p.id);toast("Référent·e enregistré·e");refresh()});
  $("#photoNotes").onchange=async()=>{await sb.from("projects").update({photography_notes:$("#photoNotes").value}).eq("id",p.id);toast("Brief photo enregistré")};
@@ -287,11 +331,16 @@ async function postComment(pid,parent,body){body=(body||"").trim();if(!body)retu
 
 
 function dutiesView(){
- $("#title").textContent="Astreintes week-end";$("#subtitle").textContent="Organisation du pôle Médias";
- let rows=projects.filter(p=>{if(!p.event_date)return false;let d=new Date(p.event_date+"T12:00:00");return [0,6].includes(d.getDay())||p.media_weekend_referent_id}).sort((a,b)=>(a.event_date||"").localeCompare(b.event_date||""));
- $("#view").innerHTML=`<section class="duty-page-head"><div class="eyebrow">ORGANISATION MÉDIAS</div><h2>☾ Astreintes week-end</h2><div style="color:#c6d7e9">Une vue séparée des projets pour savoir immédiatement qui assure l’astreinte Médias.</div></section>
- <div class="duty-list">${rows.length?rows.map(p=>`<div class="duty-row"><div class="duty-date">${fmtDate(p.event_date)}</div><div><div class="duty-project">${esc(p.name)}</div><div class="muted">${esc(p.type)}</div></div><select data-duty="${p.id}">${userOptions("Médias",p.media_weekend_referent_id)}</select></div>`).join(""):`<div class="duty-empty"><b>Aucune astreinte à afficher.</b><br>Les événements du week-end apparaîtront automatiquement ici.</div>`}</div>`;
- document.querySelectorAll("[data-duty]").forEach(x=>x.onchange=async()=>{await sb.from("projects").update({media_weekend_referent_id:x.value||null}).eq("id",x.dataset.duty);toast("Astreinte enregistrée")});
+ $("#title").textContent="Astreintes";$("#subtitle").textContent="Astreintes semaine et week-end · Médias & Événementiel";
+ const block=(scope,pole)=>{let arr=duties.filter(d=>d.duty_scope===scope&&d.pole===pole);return `<section class="card duty-section"><div class="cardhead"><h2>${scope} · ${pole}</h2><button class="btn secondary small" data-newduty="${scope}" data-dutypole="${pole}">+ Ajouter</button></div><div class="pad">${arr.map(d=>`<div class="duty-row"><input type="date" data-ddate="${d.id}" value="${d.duty_date}"><div><b>${esc(userName(d.user_id))}</b><br><span class="muted">${esc(d.notes||"")}</span></div><select data-duser="${d.id}" data-dpole="${pole}">${userOptions(pole,d.user_id)}</select></div>`).join("")||'<div class="duty-empty">Aucune astreinte renseignée.</div>'}</div></section>`};
+ $("#view").innerHTML=`<section class="duty-page-head"><div class="eyebrow">ORGANISATION</div><h2>☾ Astreintes semaine & week-end</h2><div style="color:#c6d7e9">Deux pôles concernés : Médias et Événementiel.</div></section>${block("Semaine","Médias")}${block("Semaine","Événementiel")}${block("Week-end","Médias")}${block("Week-end","Événementiel")}`;
+ document.querySelectorAll("[data-newduty]").forEach(b=>b.onclick=()=>dutyModal(b.dataset.newduty,b.dataset.dutypole));
+ document.querySelectorAll("[data-duser]").forEach(x=>x.onchange=async()=>{await sb.from("duties").update({user_id:x.value||null}).eq("id",x.dataset.duser);toast("Astreinte enregistrée")});
+ document.querySelectorAll("[data-ddate]").forEach(x=>x.onchange=async()=>{await sb.from("duties").update({duty_date:x.value}).eq("id",x.dataset.ddate);toast("Date enregistrée")});
+}
+function dutyModal(scope,pole){
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Nouvelle astreinte</h2><p class="muted">${scope} · ${pole}</p><label><span>Date</span><input id="dudate" type="date"></label><label><span>Personne</span><select id="duuser">${userOptions(pole,null)}</select></label><label><span>Note</span><input id="dunote" placeholder="Ex. semaine du 5 octobre"></label><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="duc">Annuler</button> <button class="btn" id="dus">Ajouter</button></div></div>`;
+ $("#duc").onclick=closeModal;$("#dus").onclick=async()=>{if(!$("#dudate").value)return alert("Choisis une date.");let r=await sb.from("duties").insert({duty_date:$("#dudate").value,duty_scope:scope,pole,user_id:$("#duuser").value||null,notes:$("#dunote").value||null});if(r.error)return alert(r.error.message);closeModal();toast("Astreinte ajoutée");refresh()};
 }
 
 function projectOwnerModal(p){
@@ -316,14 +365,17 @@ function taskNotesModal(p,t){
  $("#tnsave").onclick=async()=>{await sb.from("tasks").update({notes:$("#tnotes").value,updated_at:new Date().toISOString()}).eq("id",t.id);let body=$("#tcomment").value.trim();if(body){let r=await sb.from("comments").insert({project_id:p.id,context_type:"task",context_task_id:t.id,task_id:t.id,author_id:me.id,body}).select().single();if(!r.error){let names=[...body.matchAll(/@([A-Za-z0-9._-]+)/g)].map(m=>m[1].toLowerCase());for(let name of new Set(names)){let u=users.find(x=>x.username.toLowerCase()===name);if(u&&u.id!==me.id){await sb.from("mentions").insert({comment_id:r.data.id,mentioned_user_id:u.id});await sb.from("notifications").insert({user_id:u.id,actor_id:me.id,project_id:p.id,task_id:t.id,type:"mention",message:`${me.display_name} vous a mentionné·e sur la tâche « ${t.title} » : ${body}`})}}}}closeModal();toast("Notes enregistrées");refresh()};
 }
 
-function taskModal(p,pole){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Ajouter une tâche</h2><label class="muted">Tâche / livrable</label><input id="tt" style="width:100%;margin:7px 0 12px"><label class="muted">Échéance</label><input id="td" type="date" value="${p.event_date||""}" style="width:100%;margin:7px 0 12px"><div style="text-align:right"><button class="btn secondary" id="tc">Annuler</button> <button class="btn" id="ts">Ajouter</button></div></div>`;$("#tc").onclick=closeModal;$("#ts").onclick=async()=>{let title=$("#tt").value.trim();if(!title)return;let r=await sb.from("tasks").insert({project_id:p.id,pole,title,due_date:$("#td").value||null,status:"À faire",created_by:me.id});if(r.error)return alert(r.error.message);closeModal();toast("Tâche ajoutée")};
+function taskModal(p,pole,subpole=null){
+ let presets=pole==="Stratégie & contenus"?STRATEGY_DELIVERABLES:(pole==="Médias"?MEDIA_DELIVERABLES:[]);
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>Ajouter une tâche / un livrable</h2><p class="muted">${esc(pole)}${subpole?" · "+esc(subpole):""}</p>${presets.length?`<label><span>Type</span><select id="tpreset"><option value="">Choisir…</option>${presets.map(x=>`<option>${x}</option>`).join("")}</select></label>`:""}<label><span>Nom de la tâche / du livrable</span><input id="tt" style="width:100%"></label><label><span>Échéance</span><input id="td" type="date" value="${p.event_date||""}" style="width:100%"></label><div style="text-align:right;margin-top:15px"><button class="btn secondary" id="tc">Annuler</button> <button class="btn" id="ts">Ajouter</button></div></div>`;
+ if($("#tpreset"))$("#tpreset").onchange=()=>{if($("#tpreset").value)$("#tt").value=$("#tpreset").value};
+ $("#tc").onclick=closeModal;$("#ts").onclick=async()=>{let title=$("#tt").value.trim();if(!title)return;let r=await sb.from("tasks").insert({project_id:p.id,pole,subpole,title,deliverable_type:$("#tpreset")?.value||null,due_date:$("#td").value||null,status:"À faire",created_by:me.id});if(r.error)return alert(r.error.message);closeModal();toast("Tâche ajoutée");refresh()};
 }
 function projectModal(p=null){
- $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>${p?"Modifier":"Nouveau"} projet</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom</span><input id="pn" value="${esc(p?.name||"")}"></label><label><span>Date</span><input id="pd" type="date" value="${esc(p?.event_date||"")}"><small class="muted">Vide = date à confirmer</small></label><label><span>Type</span><select id="pt">${TYPES.map(x=>`<option ${p?.type===x?"selected":""}>${x}</option>`).join("")}</select></label><label><span>Priorité</span><select id="pp">${["Normale","Haute"].map(x=>`<option ${p?.priority===x?"selected":""}>${x}</option>`).join("")}</select></label></div><label style="display:block;margin-top:10px"><span class="muted">Description</span><textarea id="px">${esc(p?.description||"")}</textarea></label><div style="display:flex;justify-content:space-between;margin-top:15px"><div>${p?'<button class="btn danger" id="pdel">Supprimer le projet</button>':""}</div><div><button class="btn secondary" id="pc">Annuler</button> <button class="btn" id="ps">Enregistrer</button></div></div></div>`;
+ $("#modal").className="modal";$("#modal").innerHTML=`<div class="modalbox"><h2>${p?"Modifier":"Nouveau"} projet</h2><div class="formgrid" style="margin-top:15px"><label><span>Nom</span><input id="pn" value="${esc(p?.name||"")}"></label><label><span>Date</span><input id="pd" type="date" value="${esc(p?.event_date||"")}"><small class="muted">Vide = date à confirmer</small></label><label><span>Type</span><select id="pt">${TYPES.map(x=>`<option ${p?.type===x?"selected":""}>${x}</option>`).join("")}</select></label><label><span>Priorité</span><select id="pp">${["Basse","Normale","Haute","Urgente"].map(x=>`<option ${p?.priority===x?"selected":""}>${x}</option>`).join("")}</select></label><label><span>Thématique</span><select id="pth"><option value="">Non thématisé</option>${THEMES.map(x=>`<option ${p?.theme===x?"selected":""}>${x}</option>`).join("")}</select></label></div><label style="display:block;margin-top:10px"><span class="muted">Description</span><textarea id="px">${esc(p?.description||"")}</textarea></label><div style="display:flex;justify-content:space-between;margin-top:15px"><div>${p?'<button class="btn danger" id="pdel">Supprimer le projet</button>':""}</div><div><button class="btn secondary" id="pc">Annuler</button> <button class="btn" id="ps">Enregistrer</button></div></div></div>`;
  $("#pc").onclick=closeModal;if(p)$("#pdel").onclick=async()=>{if(confirm("Supprimer définitivement ce projet ?")){await sb.from("projects").delete().eq("id",p.id);closeModal();current="projects";refresh()}};
- $("#ps").onclick=async()=>{let name=$("#pn").value.trim();if(!name)return alert("Le nom est obligatoire.");let row={name,type:$("#pt").value,event_date:$("#pd").value||null,date_tbc:!$("#pd").value,priority:$("#pp").value,description:$("#px").value,updated_at:new Date().toISOString()};let r;
- if(p)r=await sb.from("projects").update(row).eq("id",p.id);else{row.created_by=me.id;r=await sb.from("projects").insert(row).select().single();if(!r.error){let defaults={"Médias":["Post réseaux sociaux","Article site","Mailing ARC"],"Événementiel":["Organisation / déroulé","Logistique"],"Stratégie & contenus":["Visuel / affiche","Éléments de langage"],"Vidéo":["Captation / montage"],"Mission cinéma et partenariat":["Partenaires / suivi"]},rows=[];for(let po of POLES)for(let title of defaults[po])rows.push({project_id:r.data.id,pole:po,title,due_date:r.data.event_date,status:"À faire",created_by:me.id});await sb.from("tasks").insert(rows)}}
+ $("#ps").onclick=async()=>{let name=$("#pn").value.trim();if(!name)return alert("Le nom est obligatoire.");let row={name,type:$("#pt").value,event_date:$("#pd").value||null,date_tbc:!$("#pd").value,priority:$("#pp").value,theme:$("#pth").value||null,description:$("#px").value,updated_at:new Date().toISOString()};let r;
+ if(p)r=await sb.from("projects").update(row).eq("id",p.id);else{row.created_by=me.id;r=await sb.from("projects").insert(row).select().single();if(!r.error){let defaults={"Médias":["Post réseaux sociaux","Article site","Mailing ARC"],"Événementiel":["Organisation / déroulé","Logistique"],"Stratégie & contenus":["Affiche","Invitation"],"Vidéo":["Captation / montage"],"Mission cinéma et partenariat":["Partenaires / suivi"]},rows=[];for(let po of POLES)for(let title of defaults[po])rows.push({project_id:r.data.id,pole:po,title,subpole:po==="Stratégie & contenus"?"Graphiste":(po==="Médias"?(title==="Article site"?"Digital":"Digital"):null),due_date:r.data.event_date,status:"À faire",created_by:me.id});await sb.from("tasks").insert(rows)}}
  if(r.error)return alert(r.error.message);closeModal();toast("Projet enregistré");refresh()};
 }
 function closeModal(){$("#modal").className="hidden"}
